@@ -4,6 +4,10 @@ module.exports = {
     node: true,
   },
   extends: 'airbnb-base',
+  globals: {
+    bun: true,
+    'bun:test': true,
+  },
   overrides: [
     {
       env: {
@@ -23,7 +27,7 @@ module.exports = {
   },
   rules: {
     'import/extensions': 'off',
-    'import/no-unresolved': [2, { ignore: ['^#.+$'] }],
+    'import/no-unresolved': [2, { ignore: ['^#.+$', '^bun.*$'] }],
     'import/prefer-default-export': 'off',
   },
 };
