@@ -1,23 +1,16 @@
-function grafting(stock, scion) {
-  // eslint-disable-next-line no-restricted-syntax
-  for (const key in scion) {
-    if (stock[key] === undefined) {
-      // eslint-disable-next-line no-param-reassign
-      stock[key] = scion[key];
-    } else if (stock[key].method === key && scion[key].method === key) {
-      // TODO: Looking for better solution
-      stock[key].controllers.push(...scion[key].controllers);
-    } else if (stock[key].method !== key && scion[key].method !== key) {
-      grafting(stock[key], scion[key]);
-    } else {
-      throw new Error(`Invalid Grafting: ${stock} ${scion}`);
-    }
-  }
-}
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-param-reassign */
 
-const validCharactersInURI = /^[a-zA-Z0-9!#$%&'()*+,-./:;=?@_~]*$/;
+import Node from './Node.js';
+
+import {
+  matchParam,
+  margeNode,
+} from './utils.js';
+
+// const validCharactersInURI = /^[a-zA-Z0-9!#$%&'()*+,-./:;=?@_~]*$/;
 const validCharactersInPath = /^[a-zA-Z0-9-_/:]*$/;
-const validCharactersInMethod = /^[a-zA-Z]+$/;
+// const validCharactersInMethod = /^[a-zA-Z]+$/;
 
 const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
@@ -27,35 +20,34 @@ class Router {
       prefix: '',
     };
 
+    this.routeTree = new Node('root');
+
+    this.currentNode = this.routeTree;
+
     // validate argument prefix
     if (typeof prefix !== 'string' || !validCharactersInPath.test(prefix)) {
       throw new Error(`Invalid prefix: ${prefix}`);
     }
 
-    this.routeTree = {};
-
-    this.currentBranch = this.routeTree;
-
-    this.prefix = prefix || '';
+    this.prefix = prefix;
 
     this.prefix.split('/').filter((segment) => (segment !== '')).forEach((segment) => {
-      if (this.currentBranch[segment] === undefined) this.currentBranch[segment] = {};
-      this.currentBranch = this.currentBranch[segment];
+      this.currentNode = this.currentNode.addNode(segment);
     });
 
-    this.middleware = [];
+    this.processes = [];
   }
 
-  // add route to route tree
-  route(path, ...functions) {
+  // add a route to route tree
+  route(path, ...processes) {
     // validate argument path
     if (typeof path !== 'string' || path === '' || !validCharactersInPath.test(path)) {
-      throw new Error(`Invalid Path: ${path} ${typeof path}`);
+      throw new Error(`Invalid Path: "${path}" "${typeof path}"`);
     }
 
-    // validate argument functions
-    if (functions.length === 0 || functions.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Function');
+    // validate argument handlers
+    if (processes.length === 0 || processes.some((fn) => (typeof fn !== 'function'))) {
+      throw new Error('Invalid Process');
     }
 
     // split path into segments
@@ -64,42 +56,37 @@ class Router {
     // match and validate method
     const method = segments.shift().match(/^(?<method>[a-z]+):$/i)?.groups.method.toUpperCase();
 
-    const reinstatePath = segments.join('/');
+    const reinstatePath = `${method}:/${this.prefix}/${segments.join('/')}`.replace(/\/\//g, '/');
 
     if (!method) {
-      throw new Error(`Invalid Method: ${path}`);
+      throw new Error(`Missing Method: "${path}"`);
     }
 
     if (!validMethods.includes(method)) {
-      console.warn(`Not Valid Method: ${method}`);
+      console.warn(`Not Valid Method: "${method}"`);
     }
 
-    // add branch to route tree
-    let branch = this.currentBranch;
+    let { currentNode } = this;
 
     segments.forEach((segment) => {
-      if (segment.match(/^:.+$/)) {
-        if (branch[':param'] === undefined) {
-          branch[':param'] = { param: [segment] };
-        } else {
-          branch[':param'].param.push(segment);
-        }
-        branch = branch[':param'];
-      } else {
-        if (branch[segment] === undefined) branch[segment] = {};
-        branch = branch[segment];
+      const param = matchParam(segment);
+
+      const key = param === undefined ? segment : ':param';
+
+      if (currentNode[key] === undefined){
+        currentNode.addNode(segment)
+      } else if (param){
+        currentNode[key]._params.push(param);
       }
+
+      currentNode = currentNode[key]
     });
 
-    if (branch[method] === undefined) {
-      branch[method] = {
-        method,
-        path: `${method}:/${this.prefix}/${reinstatePath}`.replace(/\/\//g, '/'),
-        controllers: functions,
-      };
+    if (currentNode[method] === undefined) {
+      currentNode.addRoute(method, reinstatePath, ...processes);
     } else {
-      console.warn(`Route Already Exists: ${path}`);
-      branch[method].push(functions);
+      console.warn(`Duplicate Route Method: "${reinstatePath}". Will Add Processes To Current Route Method`);
+      currentNode[method].addProcesses(...processes);
     }
 
     return this;
@@ -112,36 +99,25 @@ class Router {
     }
 
     routes.forEach((route) => {
-      this.route(route);
+      this.route(...route);
     });
 
     return this;
   }
 
-  // graft other router to this router
-  graft(router) {
+  // marge other router's routeTree to this router's routeTree
+  marge(router) {
     if (!(router instanceof Router)) {
       throw new Error('Invalid Router');
     }
 
-    grafting(this.routeTree, router.routeTree);
+    margeNode(this.routeTree, router.routeTree);
 
     return this;
   }
 
-  // add global middleware, will be executed before or after route functions
-  middleware(fn) {
-    if (typeof fn !== 'function') {
-      throw new Error('Invalid Function');
-    }
-
-    this.middleware.push(fn);
-
-    return this;
-  }
-
-  // match request to route tree
-  match(ctx, next) {
+  // routing a path to match a route
+  routing(path) {
 
   }
 

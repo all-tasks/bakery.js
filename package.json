@@ -6,6 +6,7 @@
   "main": "index.js",
   "module": "index.js",
   "type": "module",
+  "scripts": {},
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": ">=6.0.0",
     "@typescript-eslint/parser": ">=6.0.0",

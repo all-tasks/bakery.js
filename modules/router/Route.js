@@ -1,12 +1,15 @@
+/* eslint-disable no-underscore-dangle */
+
 class Route {
-  constructor(path, controllers = []) {
-    this.path = path;
-    this.params = [];
-    this.controllers = controllers;
+  constructor(method, path, ...processes) {
+    this._method = method;
+    this._path = path;
+    this._processes = processes;
   }
 
-  addControllers(controllers) {
-    this.controllers.push(controllers);
+  // add processes to the current node
+  addProcesses(...processes) {
+    this._processes.push(...processes);
   }
 }
 
