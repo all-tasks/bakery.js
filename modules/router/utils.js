@@ -1,6 +1,12 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-param-reassign */
 
+const validCharactersInURI = /^[a-zA-Z0-9!#$%&'()*+,-./:;=?@_~]*$/;
+const validCharactersInPath = /^[a-zA-Z0-9-_/:]*$/;
+const validCharactersInMethod = /^[a-zA-Z]+$/;
+
+const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+
 function matchParam(segment) {
   return /^:{1}(.+)$/.exec(segment)?.[1];
 }
@@ -12,7 +18,10 @@ function matchParam(segment) {
  */
 
 function margeNode(stock, scion) {
-  stock._params.push(...scion._params);
+  scion._params.forEach((param) => {
+    stock._params.add(param);
+  });
+
   stock.addProcesses(...scion._processes);
 
   // eslint-disable-next-line no-restricted-syntax
@@ -35,6 +44,10 @@ function margeNode(stock, scion) {
 }
 
 export {
+  validCharactersInURI,
+  validCharactersInPath,
+  validCharactersInMethod,
+  validMethods,
   matchParam,
   margeNode,
 };

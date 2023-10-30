@@ -1,18 +1,15 @@
-/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-param-reassign */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-underscore-dangle */
 
 import Node from './Node.js';
 
 import {
-  matchParam,
+  validCharactersInPath,
+  validCharactersInMethod,
+  validMethods,
   margeNode,
 } from './utils.js';
-
-// const validCharactersInURI = /^[a-zA-Z0-9!#$%&'()*+,-./:;=?@_~]*$/;
-const validCharactersInPath = /^[a-zA-Z0-9-_/:]*$/;
-// const validCharactersInMethod = /^[a-zA-Z]+$/;
-
-const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
 class Router {
   constructor(options) {
@@ -21,22 +18,67 @@ class Router {
     };
 
     this.routeTree = new Node('root');
-
     this.currentNode = this.routeTree;
 
     // validate argument prefix
     if (typeof prefix !== 'string' || !validCharactersInPath.test(prefix)) {
-      throw new Error(`Invalid prefix: ${prefix}`);
+      throw new Error(`Invalid prefix: "${prefix}"`);
     }
 
     this.prefix = prefix;
 
-    this.prefix.split('/').filter((segment) => (segment !== '')).forEach((segment) => {
+    this.prefix.split('/').filter((segment) => (segment)).forEach((segment) => {
       this.currentNode = this.currentNode.addNode(segment);
     });
 
-    this.processes = [];
+    this.methods = {};
+
+    // this.errors = {};
   }
+
+  // add global processes
+  addGlobalProcesses(...processes) {
+    // validate argument processes
+    if (processes.length === 0 || processes.some((fn) => (typeof fn !== 'function'))) {
+      throw new Error('Invalid Processes');
+    }
+
+    this.routeTree.addProcesses(...processes);
+  }
+
+  // add method processes
+  addMethodProcesses(method, ...processes) {
+    // validate argument method
+    if (typeof method !== 'string' || !validCharactersInMethod.test(method)) {
+      throw new Error(`Invalid Method: "${method}"`);
+    }
+
+    // validate argument processes
+    if (processes.length === 0 || processes.some((fn) => (typeof fn !== 'function'))) {
+      throw new Error('Invalid Processes');
+    }
+
+    const upperCasedMethod = method.toUpperCase();
+
+    if (!validMethods.includes(upperCasedMethod)) {
+      console.warn(`Not Valid Method: "${method}"`);
+    }
+
+    // validate argument processes
+    if (processes.length === 0 || processes.some((fn) => (typeof fn !== 'function'))) {
+      throw new Error('Invalid Processes');
+    }
+
+    if (this.methods[upperCasedMethod] === undefined) {
+      this.methods[upperCasedMethod] = [];
+    }
+
+    this.methods[upperCasedMethod].push(...processes);
+  }
+
+  // addErrorProcesses(...processes) {
+
+  // }
 
   // add a route to route tree
   route(path, ...processes) {
@@ -51,10 +93,10 @@ class Router {
     }
 
     // split path into segments
-    const segments = path.split('/').filter((segment) => (segment !== ''));
+    const segments = path.split('/').filter((segment) => (segment));
 
     // match and validate method
-    const method = segments.shift().match(/^(?<method>[a-z]+):$/i)?.groups.method.toUpperCase();
+    const method = segments?.shift()?.match(/^(?<method>[a-z]+):$/i)?.groups.method.toUpperCase();
 
     const reinstatePath = `${method}:/${this.prefix}/${segments.join('/')}`.replace(/\/\//g, '/');
 
@@ -62,32 +104,13 @@ class Router {
       throw new Error(`Missing Method: "${path}"`);
     }
 
-    if (!validMethods.includes(method)) {
-      console.warn(`Not Valid Method: "${method}"`);
-    }
-
     let { currentNode } = this;
 
     segments.forEach((segment) => {
-      const param = matchParam(segment);
-
-      const key = param === undefined ? segment : ':param';
-
-      if (currentNode[key] === undefined){
-        currentNode.addNode(segment)
-      } else if (param){
-        currentNode[key]._params.push(param);
-      }
-
-      currentNode = currentNode[key]
+      currentNode = currentNode.addNode(segment);
     });
 
-    if (currentNode[method] === undefined) {
-      currentNode.addRoute(method, reinstatePath, ...processes);
-    } else {
-      console.warn(`Duplicate Route Method: "${reinstatePath}". Will Add Processes To Current Route Method`);
-      currentNode[method].addProcesses(...processes);
-    }
+    currentNode.addRoute(method, reinstatePath, ...processes);
 
     return this;
   }
@@ -117,8 +140,63 @@ class Router {
   }
 
   // routing a path to match a route
-  routing(path) {
+  routing(method, url) {
+    // split url into segments
+    const segments = url.split('/').filter((segment) => (segment));
 
+    let currentNode = this.routeTree;
+
+    const params = {};
+
+    const processes = [...this.routeTree._processes];
+
+    let matchedRoute;
+
+    for (const segment of segments) {
+      currentNode = currentNode[segment] || currentNode[':param'];
+
+      if (currentNode === undefined) {
+        matchedRoute = false;
+        break;
+      }
+
+      if (currentNode._processes.length) {
+        processes.push(...currentNode._processes);
+      }
+
+      if (currentNode._params.size) {
+        currentNode._params.forEach((param) => {
+          if (Object.hasOwnProperty.call(params, param)) {
+            console.warn(`Param '${param}' Has Been Assigned Multiple Times`);
+          }
+          params[param] = segment;
+        });
+      }
+    }
+
+    if (matchedRoute === false) {
+      if (this.errors?.[404]) this.errors[404]({ method, url });
+      return undefined;
+    }
+
+    const upperCasedMethod = method.toUpperCase();
+
+    matchedRoute = currentNode[upperCasedMethod];
+
+    if (matchedRoute === undefined) {
+      if (this.errors?.[405]) this.errors[405]({ method, url });
+      return undefined;
+    }
+
+    if (this.methods[upperCasedMethod]) {
+      processes.push(...this.methods[method]);
+    }
+
+    return {
+      path: matchedRoute._path,
+      params,
+      processes: [...processes, ...matchedRoute._processes],
+    };
   }
 
   toString() {
