@@ -2,7 +2,7 @@
 
 class Route {
   constructor(method, path, ...processes) {
-    this._method = method;
+    // this._method = method;
     this._path = path;
     this._processes = processes;
   }

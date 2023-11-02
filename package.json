@@ -1,7 +1,7 @@
 {
   "name": "bakery.js",
   "version": "0.0.1",
-  "description": "A web framework for Bun",
+  "description": "A RESTful API framework based on Bun",
   "author": "Lane <lane@wiseinfo.cc>",
   "main": "index.js",
   "module": "index.js",

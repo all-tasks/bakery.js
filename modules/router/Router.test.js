@@ -160,23 +160,35 @@ describe('router class', async () => {
 
     router.routeTree.api.v1.addProcesses(() => {});
 
-    let matchedRoute = router.routing('GET', '/api/v1/users/1000');
+    let matchedRoute = router.routing({
+      method: 'GET',
+      path: '/api/v1/users/1000',
+    });
 
     expect(matchedRoute.path).toBe('GET:/api/v1/users/:id');
     expect(matchedRoute.params).toEqual({ id: '1000' });
     expect(matchedRoute.processes.length).toBe(4);
 
-    matchedRoute = router.routing('GET', '/api/v1/users/1000/notifications');
+    matchedRoute = router.routing({
+      method: 'GET',
+      path: '/api/v1/users/1000/notifications',
+    });
 
     expect(matchedRoute).toBe(undefined);
 
-    matchedRoute = router.routing('POST', '/api/v1/users');
+    matchedRoute = router.routing({
+      method: 'POST',
+      path: '/api/v1/users',
+    });
 
     expect(matchedRoute).toBe(undefined);
 
     router.route('GET:/users/:id/notifications/:id', () => {});
 
-    matchedRoute = router.routing('GET', '/api/v1/users/1000/notifications/2000');
+    matchedRoute = router.routing({
+      method: 'GET',
+      path: '/api/v1/users/1000/notifications/2000',
+    });
 
     expect(matchedRoute.params.id).toBe('2000');
   });

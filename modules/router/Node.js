@@ -27,7 +27,7 @@ class Node {
 
     const param = matchParam(segment);
 
-    this._segment = param === undefined ? segment : ':param';
+    // this._segment = param === undefined ? segment : ':param';
     this._params = new Set(param === undefined ? [] : [param]);
     this._processes = processes;
   }

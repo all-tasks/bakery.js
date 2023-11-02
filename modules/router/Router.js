@@ -140,9 +140,9 @@ class Router {
   }
 
   // routing a path to match a route
-  routing(method, url) {
+  routing({ method, path }) {
     // split url into segments
-    const segments = url.split('/').filter((segment) => (segment));
+    const segments = path.split('/').filter((segment) => (segment));
 
     let currentNode = this.routeTree;
 
@@ -175,7 +175,7 @@ class Router {
     }
 
     if (matchedRoute === false) {
-      if (this.errors?.[404]) this.errors[404]({ method, url });
+      if (this.errors?.[404]) this.errors[404]({ method, path });
       return undefined;
     }
 
@@ -184,7 +184,7 @@ class Router {
     matchedRoute = currentNode[upperCasedMethod];
 
     if (matchedRoute === undefined) {
-      if (this.errors?.[405]) this.errors[405]({ method, url });
+      if (this.errors?.[405]) this.errors[405]({ method, path });
       return undefined;
     }
 
