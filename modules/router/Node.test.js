@@ -9,6 +9,7 @@ describe('node class', async () => {
     expect(node).toHaveProperty('addNode');
     expect(node).toHaveProperty('addRoute');
     expect(node).toHaveProperty('addProcesses');
+    expect(node).toHaveProperty('addRouteProcesses');
 
     // eslint-disable-next-line no-new
     expect(() => { new Node('_test'); }).toThrow();

@@ -9,7 +9,8 @@ describe('router class', async () => {
     const router = new Router();
 
     expect(router).toBeInstanceOf(Router);
-    expect(router).toHaveProperty('addGlobalProcesses');
+    expect(router).toHaveProperty('addProcesses');
+    expect(router).toHaveProperty('addRouteProcesses');
     expect(router).toHaveProperty('addMethodProcesses');
     expect(router).toHaveProperty('route');
     expect(router).toHaveProperty('batch');
@@ -27,14 +28,24 @@ describe('router class', async () => {
     expect(() => { new Router({ prefix: '/api/v1/@' }); }).toThrow();
   });
 
-  await test('addGlobalProcesses', async () => {
+  await test('addProcesses', async () => {
     const router = new Router({ prefix: '/api/v1' });
 
-    expect(() => { router.addGlobalProcesses({}); }).toThrow();
+    expect(() => { router.addProcesses({}); }).toThrow();
 
-    router.addGlobalProcesses(() => {}, () => {});
+    router.addProcesses(() => {}, () => {});
 
     expect(router.routeTree._processes.length).toBe(2);
+  });
+
+  await test('addRouteProcesses', async () => {
+    const router = new Router({ prefix: '/api/v1' });
+
+    expect(() => { router.addRouteProcesses({}); }).toThrow();
+
+    router.addRouteProcesses(() => {}, () => {});
+
+    expect(router.routeTree._routeProcesses.length).toBe(2);
   });
 
   await test('addMethodProcesses', async () => {
@@ -48,7 +59,7 @@ describe('router class', async () => {
 
     router.addMethodProcesses('get', () => {}, () => {});
 
-    expect(router.methods.GET.length).toBe(2);
+    expect(router.methodProcesses.GET.length).toBe(2);
   });
 
   await test('route', async () => {
@@ -149,7 +160,7 @@ describe('router class', async () => {
   await test('routing', async () => {
     const router = new Router({ prefix: '/api/v1' });
 
-    router.addGlobalProcesses(() => {});
+    router.addProcesses(() => {});
 
     router.addMethodProcesses('GET', () => {});
 

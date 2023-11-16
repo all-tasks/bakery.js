@@ -7,9 +7,8 @@ A RESTful API framework based on Bun
 
 1. `Convention Over Configuration`
 
+
 2. `KISS: Keep It Simple, Stupid`
 
 
 ## bakery.js is not
-
-1.

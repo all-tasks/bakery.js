@@ -30,6 +30,7 @@ class Node {
     // this._segment = param === undefined ? segment : ':param';
     this._params = new Set(param === undefined ? [] : [param]);
     this._processes = processes;
+    this._routeProcesses = [];
   }
 
   // add a sub node to the current node
@@ -116,6 +117,18 @@ class Node {
     }
 
     this._processes.push(...processes);
+
+    return this;
+  }
+
+  // add processes to all routes under the current node
+  addRouteProcesses(...processes) {
+    // validate argument processes
+    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
+      throw new Error('Invalid Processes');
+    }
+
+    this._routeProcesses = processes;
 
     return this;
   }

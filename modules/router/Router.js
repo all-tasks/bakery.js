@@ -31,22 +31,20 @@ class Router {
       this.currentNode = this.currentNode.addNode(segment);
     });
 
-    this.methods = {};
-
-    // this.errors = {};
+    this.methodProcesses = {};
   }
 
-  // add global processes
-  addGlobalProcesses(...processes) {
-    // validate argument processes
-    if (processes.length === 0 || processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
-    }
-
+  // add processes, which will be executed when starting routing
+  addProcesses(...processes) {
     this.routeTree.addProcesses(...processes);
   }
 
-  // add method processes
+  // add processes for all routes, which will be executed before routes processes
+  addRouteProcesses(...processes) {
+    this.routeTree.addRouteProcesses(...processes);
+  }
+
+  // add processes for methods, which will be executed before matching method routes processes
   addMethodProcesses(method, ...processes) {
     // validate argument method
     if (typeof method !== 'string' || !validCharactersInMethod.test(method)) {
@@ -69,16 +67,12 @@ class Router {
       throw new Error('Invalid Processes');
     }
 
-    if (this.methods[upperCasedMethod] === undefined) {
-      this.methods[upperCasedMethod] = [];
+    if (this.methodProcesses[upperCasedMethod] === undefined) {
+      this.methodProcesses[upperCasedMethod] = [];
     }
 
-    this.methods[upperCasedMethod].push(...processes);
+    this.methodProcesses[upperCasedMethod].push(...processes);
   }
-
-  // addErrorProcesses(...processes) {
-
-  // }
 
   // add a route to route tree
   route(path, ...processes) {
@@ -188,8 +182,8 @@ class Router {
       return undefined;
     }
 
-    if (this.methods[upperCasedMethod]) {
-      processes.push(...this.methods[method]);
+    if (this.methodProcesses[upperCasedMethod]) {
+      processes.push(...this.methodProcesses[method]);
     }
 
     return {
