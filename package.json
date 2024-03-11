@@ -2,11 +2,15 @@
   "name": "bakery.js",
   "version": "0.0.1",
   "description": "A RESTful API framework based on Bun",
+  "repository": "https://github.com/lanezhao/bakery.js",
   "author": "Lane <lane@wiseinfo.cc>",
-  "main": "index.js",
-  "module": "index.js",
   "type": "module",
+  "main": "index.js",
+  "imports": {},
   "scripts": {},
+  "dependencies": {
+    "statuses": "^2.0.1"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": ">=6.0.0",
     "@typescript-eslint/parser": ">=6.0.0",
@@ -14,6 +18,7 @@
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.2",
+    "husky": "^9.0.11",
     "typescript": ">=4.7"
   },
   "peerDependencies": {
