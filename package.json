@@ -6,8 +6,14 @@
   "author": "Lane <lane@wiseinfo.cc>",
   "type": "module",
   "main": "index.js",
-  "imports": {},
-  "scripts": {},
+  "imports": {
+    "#lib": "./lib/index.js",
+    "#lib/*": "./lib/*"
+  },
+  "scripts": {
+    "test": "bun test --coverage",
+    "test:watch": "bun test --watch --coverage"
+  },
   "dependencies": {
     "statuses": "^2.0.1"
   },
