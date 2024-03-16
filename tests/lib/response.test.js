@@ -64,12 +64,39 @@ describe(' bakery.js - lib - function "createResponse"', async () => {
     expect(response.type).toBe('application/json');
   });
 
-  test('set body', async () => {
+  test('set body as string', async () => {
     console.warn = mock();
     const response = createResponse();
     response.status = 204;
     response.body = 'body';
     expect(console.warn).toHaveBeenCalledTimes(1);
     expect(response.body).toBe('body');
+    expect(response.type).toBe('text/plain');
+  });
+
+  test('set body as a Blob instance', async () => {
+    const response = createResponse();
+    response.body = new Blob(['body'], { type: 'image/png' });
+    expect(response.type).toBe('image/png');
+  });
+
+  test('set body as a FormData instance', async () => {
+    const response = createResponse();
+    response.body = new FormData();
+    expect(response.type).toBe('multipart/form-data');
+  });
+
+  test('set body as a URLSearchParams instance', async () => {
+    const response = createResponse();
+    response.body = new URLSearchParams();
+    expect(response.type).toBe('application/x-www-form-urlencoded');
+  });
+
+  test('set body as an object', async () => {
+    const response = createResponse();
+    response.body = { key: 'value' };
+    expect(response.type).toBe('application/json');
+    expect(response.body).toEqual({ key: 'value' });
+    expect(response.stringedBody).toBe(JSON.stringify({ key: 'value' }));
   });
 });

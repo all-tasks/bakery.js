@@ -29,6 +29,6 @@ module.exports = {
     'import/extensions': 'off',
     'import/no-unresolved': [2, { ignore: ['^#.+$', '^bun.*$'] }],
     'import/prefer-default-export': 'off',
-    'no-console': ['warn', { allow: ['info', 'warn', 'error'] }],
+    'no-console': ['warn', { allow: ['debug', 'info', 'warn', 'error'] }],
   },
 };

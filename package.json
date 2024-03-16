@@ -7,6 +7,7 @@
   "type": "module",
   "main": "index.js",
   "imports": {
+    "#bakery": "./index.js",
     "#lib": "./lib/index.js",
     "#lib/*": "./lib/*"
   },

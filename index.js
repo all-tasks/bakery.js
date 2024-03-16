@@ -1,4 +1,4 @@
-import Bakery from './Bakery.js';
+import Bakery from '#lib';
 
 export default Bakery;
 
