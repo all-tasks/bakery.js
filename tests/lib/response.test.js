@@ -2,9 +2,9 @@ import {
   describe, test, expect, mock,
 } from 'bun:test';
 
-import createResponse from '#lib/response.js';
+import createResponse from '#lib/response';
 
-describe(' bakery.js - lib - function "createResponse"', async () => {
+describe('lib - function "createResponse"', async () => {
   test('create response without args', async () => {
     const response = createResponse();
     expect(response.status).toBe(400);
@@ -14,16 +14,20 @@ describe(' bakery.js - lib - function "createResponse"', async () => {
     expect(response.body).toBe(undefined);
     expect(response()).toBeInstanceOf(Response);
   });
+
   test('create response with invalid status code', async () => {
     expect(() => { createResponse({ status: 0 }); }).toThrow();
   });
+
   test('create response with invalid message', async () => {
     expect(() => { createResponse({ message: 0 }); }).toThrow();
   });
+
   test('create response with invalid headers', async () => {
     expect(() => { createResponse({ headers: 0 }); }).toThrow();
     expect(() => { createResponse({ headers: { object: {} } }); }).toThrow();
   });
+
   test('create response with invalid type', async () => {
     expect(() => { createResponse({ type: 0 }); }).toThrow();
   });
@@ -98,5 +102,20 @@ describe(' bakery.js - lib - function "createResponse"', async () => {
     expect(response.type).toBe('application/json');
     expect(response.body).toEqual({ key: 'value' });
     expect(response.stringedBody).toBe(JSON.stringify({ key: 'value' }));
+  });
+
+  test('update status code after set body', async () => {
+    const response = createResponse();
+    expect(response.status).toBe(400);
+    response.body = { key: 'value' };
+    expect(response.status).toBe(200);
+  });
+
+  test('if already set, not update status code after set body', async () => {
+    const response = createResponse();
+    response.status = 201;
+    expect(response.status).toBe(201);
+    response.body = { key: 'value' };
+    expect(response.status).toBe(201);
   });
 });

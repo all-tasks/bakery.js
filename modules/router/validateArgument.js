@@ -1,0 +1,3 @@
+const validateArgument = {
+  segment,
+};

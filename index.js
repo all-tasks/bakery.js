@@ -5,3 +5,5 @@ export default Bakery;
 export {
   Bakery,
 };
+
+export * from '#modules';

@@ -1,148 +1,155 @@
-/* eslint-disable max-classes-per-file */
-/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-param-reassign */
 
 import Route from './Route.js';
 
 import {
-  validCharactersInMethod,
-  validCharactersInPath,
-  validMethods,
+  // validCharactersInMethod,
+  // validCharactersInPath,
+  // validMethods,
   matchParam,
-  margeNode,
 } from './utils.js';
 
-const validCharactersInSegment = /^:?[a-zA-Z0-9]+[a-zA-Z0-9-_]*$/;
-
 class Node {
-  constructor(segment, ...processes) {
-    // validate argument segment
-    if (typeof segment !== 'string' || !validCharactersInSegment.test(segment)) {
-      throw new Error(`Invalid Segment: ${segment}`);
-    }
+  #segment;
 
-    // validate argument processes
-    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
-    }
+  #params;
+
+  #steps;
+
+  #nodes = {};
+
+  #routes = {};
+
+  constructor(segment, ...steps) {
+    // TODO: validateArgument.segment
+    // TODO: validateArgument.steps
 
     const param = matchParam(segment);
 
-    // this._segment = param === undefined ? segment : ':param';
-    this._params = new Set(param === undefined ? [] : [param]);
-    this._processes = processes;
-    this._routeProcesses = [];
+    this.#segment = param === undefined ? segment : ':param';
+    this.#params = new Set(param === undefined ? [] : [param]);
+    this.#steps = steps;
+
+    Object.defineProperties(this, {
+      segment: {
+        enumerable: true,
+        writable: false,
+        value: this.#segment,
+      },
+      params: {
+        enumerable: true,
+        get: () => Object.freeze([...this.#params]),
+      },
+      steps: {
+        enumerable: true,
+        get: () => Object.freeze([...this.#steps]),
+      },
+      nodes: {
+        enumerable: true,
+        get: () => Object.freeze({ ...this.#nodes }),
+      },
+      routes: {
+        enumerable: true,
+        get: () => Object.freeze({ ...this.#routes }),
+      },
+    });
   }
 
-  // add a sub node to the current node
-  addNode(segment, ...processes) {
-    // validate argument segment
-    if (typeof segment !== 'string' || !validCharactersInSegment.test(segment)) {
-      throw new Error(`Invalid Segment: ${segment}`);
-    }
+  addParams(...params) {
+    // TODO: validateArgument.params
 
-    // validate argument processes
-    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
-    }
-
-    // check if the current segment is a param
-    const param = matchParam(segment);
-
-    // if the current segment is a param, use ':param' as sub node key
-    const key = param === undefined ? segment : ':param';
-
-    // if the sub node does not exist, create a new sub node and return
-    if (this[key] === undefined) {
-      this[key] = new Node(segment, ...processes);
-      return this[key];
-    }
-
-    // if the sub node exists, add processes to exist sub node
-    this[key].addProcesses(...processes);
-
-    // if segment is a param, add param to exist sub node
-    if (param !== undefined) {
-      this[key]._params.add(param);
-    }
-
-    return this[key];
-  }
-
-  // add a route to the current node
-  addRoute(method, path, ...processes) {
-    // validate argument method
-    if (
-      typeof method !== 'string'
-      || method === ''
-      || !validCharactersInMethod.test(method)) {
-      throw new Error(`Invalid Method: ${method}`);
-    }
-
-    if (!validMethods.includes(method)) {
-      console.warn(`Not Valid Method: "${method}"`);
-    }
-
-    // validate argument path
-    if (
-      typeof path !== 'string'
-      || path === ''
-      || !validCharactersInPath.test(path)) {
-      throw new Error(`Invalid Path: ${path}`);
-    }
-
-    // validate argument processes
-    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
-    }
-
-    // if the method dose not exist, create a new route
-    if (this[method] === undefined) {
-      this[method] = new Route(method, path, ...processes);
-      return this;
-    }
-
-    // if the method exist, warning and add processes to exist route
-    console.warn(`Duplicate Route Method: "${path}". Will Add Processes To Exist Route`);
-
-    this[method].addProcesses(...processes);
+    this.#params = new Set([...this.#params, ...params]);
 
     return this;
   }
 
-  // add processes to the current node
-  addProcesses(...processes) {
-    // validate argument processes
-    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
-    }
+  addSteps(...steps) {
+    // TODO: validateArgument.steps
 
-    this._processes.push(...processes);
+    this.#steps.push(...steps);
 
     return this;
   }
 
-  // add processes to all routes under the current node
-  addRouteProcesses(...processes) {
-    // validate argument processes
-    if (processes.length !== 0 && processes.some((fn) => (typeof fn !== 'function'))) {
-      throw new Error('Invalid Processes');
+  addNode(segment, ...steps) {
+    // validate argument in new Node
+
+    const newNode = new Node(segment, ...steps);
+
+    segment = newNode.segment;
+
+    if (this.#nodes[segment] === undefined) {
+      this.#nodes[segment] = newNode;
+
+      return newNode;
     }
 
-    this._routeProcesses = processes;
+    if (newNode.params.length) {
+      this.#nodes[segment].addParams(...newNode.params);
+    }
+
+    if (steps.length) {
+      this.#nodes[segment].addSteps(...steps);
+    }
+
+    return this.#nodes[segment];
+  }
+
+  margeNode(node) {
+    // validate argument in margeNode
+
+    Node.margeNode(this, node);
 
     return this;
   }
 
-  // marge the scion node into the current node
-  margeNode(scion) {
-    // validate argument scion
+  addRoute(method, path, ...steps) {
+    // validate argument in new Route
+
+    method = method.toUpperCase();
+
+    if (this.#routes[method] !== undefined) {
+      throw new Error(`method [${method}] already exists`);
+    }
+
+    this.#routes[method] = new Route(method, path, ...steps);
+
+    return this.#routes[method];
+  }
+
+  toString(replacer, space) {
+    return JSON.stringify(this, replacer, space);
+  }
+
+  static margeNode(stock, scion) {
+    // eslint-disable-next-line no-use-before-define
+    if (!(stock instanceof Node)) {
+      throw new TypeError('stock must be an instance of Node');
+    }
+    // eslint-disable-next-line no-use-before-define
     if (!(scion instanceof Node)) {
-      throw new Error('Invalid Scion');
+      throw new TypeError('scion must be an instance of Node');
     }
 
-    margeNode(this, scion);
+    stock.params = new Set([...stock.params, ...scion.params]);
 
-    return this;
+    stock.addSteps(...scion.steps);
+
+    Object.entries(scion.nodes).forEach(([segment, node]) => {
+      if (stock.nodes[segment] === undefined) {
+        stock.nodes[segment] = node;
+      } else {
+        Node.margeNode(stock.nodes[segment], scion.nodes[segment]);
+      }
+    });
+
+    Object.entries(scion.routes).forEach(([method, route]) => {
+      if (stock.routes[method] === undefined) {
+        stock.routes[method] = route;
+      } else {
+        console.error(`method [${method}] already exists in node [${stock.segment}], merging method will be ignored`);
+      }
+    });
   }
 }
 

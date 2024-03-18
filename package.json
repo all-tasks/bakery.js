@@ -9,13 +9,17 @@
   "imports": {
     "#bakery": "./index.js",
     "#lib": "./lib/index.js",
-    "#lib/*": "./lib/*"
+    "#lib/*": "./lib/*.js",
+    "#modules": "./modules/index.js",
+    "#modules/*": "./modules/*/index.js"
   },
   "scripts": {
     "test": "bun test --coverage",
-    "test:watch": "bun test --watch --coverage"
+    "test:watch": "bun test --watch --coverage",
+    "prepare": "husky install"
   },
   "dependencies": {
+    "fast-glob": "^3.3.2",
     "statuses": "^2.0.1"
   },
   "devDependencies": {

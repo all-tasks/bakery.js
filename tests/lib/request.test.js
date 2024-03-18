@@ -2,9 +2,9 @@ import {
   describe, test, expect,
 } from 'bun:test';
 
-import createRequest from '#lib/request.js';
+import createRequest from '#lib/request';
 
-describe('bakery.js - lib - function "createRequest"', async () => {
+describe('lib - function "createRequest"', async () => {
   const createReq = () => ({
     method: 'GET',
     url: 'http://localhost:6000/users?role=admin&array=1&array=2&array=3',

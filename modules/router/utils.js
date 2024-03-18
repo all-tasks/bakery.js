@@ -1,11 +1,13 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-param-reassign */
 
+import http from 'node:http';
+
 const validCharactersInURI = /^[a-zA-Z0-9!#$%&'()*+,-./:;=?@_~]*$/;
 const validCharactersInPath = /^[a-zA-Z0-9-_/:]*$/;
 const validCharactersInMethod = /^[a-zA-Z]+$/;
 
-const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+const validMethods = http.METHODS || ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
 function matchParam(segment) {
   return /^:{1}(.+)$/.exec(segment)?.[1];
