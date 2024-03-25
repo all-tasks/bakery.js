@@ -1,13 +1,8 @@
 /* eslint-disable no-param-reassign */
 
-import Route from './Route.js';
+import validateArgument from './validateArgument.js';
 
-import {
-  // validCharactersInMethod,
-  // validCharactersInPath,
-  // validMethods,
-  matchParam,
-} from './utils.js';
+import Route from './Route.js';
 
 class Node {
   #segment;
@@ -21,10 +16,9 @@ class Node {
   #routes = {};
 
   constructor(segment, ...steps) {
-    // TODO: validateArgument.segment
-    // TODO: validateArgument.steps
+    validateArgument.all({ segment, steps });
 
-    const param = matchParam(segment);
+    const param = segment.match(/^:([\w-.]+)$/)?.[1];
 
     this.#segment = param === undefined ? segment : ':param';
     this.#params = new Set(param === undefined ? [] : [param]);
@@ -56,7 +50,14 @@ class Node {
   }
 
   addParams(...params) {
-    // TODO: validateArgument.params
+    if (params.length === 0) {
+      console.warn('no params to add');
+      return this;
+    }
+
+    if (params.some((param) => typeof param !== 'string')) {
+      throw new TypeError('param must be string');
+    }
 
     this.#params = new Set([...this.#params, ...params]);
 
@@ -64,7 +65,12 @@ class Node {
   }
 
   addSteps(...steps) {
-    // TODO: validateArgument.steps
+    if (steps.length === 0) {
+      console.warn('no steps to add');
+      return this;
+    }
+
+    validateArgument.steps(steps);
 
     this.#steps.push(...steps);
 
@@ -130,26 +136,30 @@ class Node {
     if (!(scion instanceof Node)) {
       throw new TypeError('scion must be an instance of Node');
     }
+    try {
+      stock.params = new Set([...stock.params, ...scion.params]);
 
-    stock.params = new Set([...stock.params, ...scion.params]);
+      stock.addSteps(...scion.steps);
 
-    stock.addSteps(...scion.steps);
+      Object.entries(scion.nodes).forEach(([segment, node]) => {
+        if (stock.nodes[segment] === undefined) {
+          stock.nodes[segment] = node;
+        } else {
+          Node.margeNode(stock.nodes[segment], scion.nodes[segment]);
+        }
+      });
 
-    Object.entries(scion.nodes).forEach(([segment, node]) => {
-      if (stock.nodes[segment] === undefined) {
-        stock.nodes[segment] = node;
-      } else {
-        Node.margeNode(stock.nodes[segment], scion.nodes[segment]);
-      }
-    });
-
-    Object.entries(scion.routes).forEach(([method, route]) => {
-      if (stock.routes[method] === undefined) {
-        stock.routes[method] = route;
-      } else {
-        console.error(`method [${method}] already exists in node [${stock.segment}], merging method will be ignored`);
-      }
-    });
+      Object.entries(scion.routes).forEach(([method, route]) => {
+        if (stock.routes[method] === undefined) {
+          stock.routes[method] = route;
+        } else {
+          console.warn(`method [${method}] already exists in node [${stock.segment}], merging method will be ignored`);
+        }
+      });
+    } catch (error) {
+      console.error(`margeNode error: ${error.message}`);
+      throw error;
+    }
   }
 }
 

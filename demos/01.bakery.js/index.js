@@ -6,6 +6,8 @@ const bakery = new Bakery({
   port: 6000,
 });
 
+let willTriggerError = true;
+
 bakery.addSteps(
   async function logger() {
     this.logger = console;
@@ -14,20 +16,34 @@ bakery.addSteps(
     console.info(`response "${this.request.method}:${this.request.url}"`);
   },
   async function welcome() {
+    this.logger.info('---- welcome ----');
     this.response.body = 'Welcome to bakery.js!';
     this.steps.after(async function afterWelcome() {
-      this.response.body += ' Hope you enjoy it!';
-      this.steps.next();
+      this.response.body += ' Hope you enjoy it';
+      await this.steps.next();
     });
-    this.steps.next();
-    this.response.body += ' And have a wonderful day!';
+    await this.steps.next();
+    this.response.body += ' Have a wonderful day!';
+  },
+  async () => {
+    if (willTriggerError) throw new Error('error');
   },
 );
 
-fetch('http://localhost:6000/users?role=admin')
+await fetch('http://localhost:6000/users?role=admin')
   .then((res) => {
     console.debug(res);
     return res.text();
   }).then((res) => {
-    console.debug(`fetch: ${res}`);
+    if (res)console.debug(`fetch: ${res}`);
+  });
+
+willTriggerError = false;
+
+await fetch('http://localhost:6000/users?role=admin')
+  .then((res) => {
+    console.debug(res);
+    return res.text();
+  }).then((res) => {
+    if (res)console.debug(`fetch: ${res}`);
   });

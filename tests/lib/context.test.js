@@ -4,8 +4,8 @@ import {
 
 import createContext from '#lib/context';
 
-// const context = createContext();
-
-// context.response();
-
-// console.log(context.response.status);
+describe('lib - function "createContext"', async () => {
+  test('this.next() -> this.steps.next()', async () => {
+    const context = createContext();
+  });
+});

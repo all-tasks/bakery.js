@@ -39,7 +39,7 @@ describe('lib - function "createResponse"', async () => {
     expect(response.message).toBe('Created');
   });
 
-  test('set status code not allowed body', async () => {
+  test('set status code not allowed with body', async () => {
     console.warn = mock();
     const response = createResponse();
     response.body = 'body';

@@ -11,7 +11,9 @@
     "#lib": "./lib/index.js",
     "#lib/*": "./lib/*.js",
     "#modules": "./modules/index.js",
-    "#modules/*": "./modules/*/index.js"
+    "#modules/*": "./modules/*/index.js",
+    "#utils": "./utils/index.js",
+    "#utils/*": "./utils/*.js"
   },
   "scripts": {
     "test": "bun test --coverage",

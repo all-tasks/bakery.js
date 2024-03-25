@@ -1,5 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
+import validateArgument from './validateArgument.js';
+
 class Route {
   #method;
 
@@ -10,9 +12,7 @@ class Route {
   #meta;
 
   constructor(method, path, ...steps) {
-    // TODO: validateArgument.method
-    // TODO: validateArgument.path
-    // TODO: validateArgument.steps
+    validateArgument.all({ method, path, steps });
 
     this.#method = method;
 
@@ -36,19 +36,49 @@ class Route {
         get: () => Object.freeze([...this.#steps]),
       },
     });
+
+    this.proxy = new Proxy(this, {
+      get(target, property) {
+        return (property === 'proxy' || typeof target[property] === 'function') ? undefined : target[property];
+      },
+      set() {
+        throw new Error('route is immutable');
+      },
+    });
   }
 
   addSteps(...steps) {
+    if (steps.length === 0) {
+      console.warn('no steps to add');
+      return this;
+    }
+
+    validateArgument.steps(steps);
+
     this.#steps.push(...steps);
+
+    return this;
   }
 
   updateMeta(meta) {
+    if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) {
+      throw new TypeError('meta must be an object');
+    }
+
     this.#meta = { ...this.#meta, ...meta };
+
+    return this;
+  }
+
+  toString(replacer, space) {
+    return JSON.stringify(this, replacer, space);
   }
 
   static parseRoutePath(routePath) {
     try {
-      // TODO: validateArgument.nonEmptyString(routePath)
+      if (typeof routePath !== 'string' || routePath.length === 0) {
+        throw new TypeError('routePath must be a non-empty string');
+      }
 
       const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w-./:]*)$/)?.groups || {};
 
@@ -56,7 +86,7 @@ class Route {
         throw new TypeError('invalid routePath');
       }
 
-      const segments = path.match(/((?<=\/)[:]?[\w-.]+(?![\w-.]*[:]))+/g) || [];
+      const segments = path.match(/((?<=\/):?[\w-.]+(?![\w-.]*[:]))+/g) || [];
 
       if (segments.length !== path.match(/((?<=\/)[\w-.:]+)+/g).length) {
         throw new TypeError('invalid routePath');
