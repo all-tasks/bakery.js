@@ -1,14 +1,31 @@
-// import {
-//   describe, test, expect,
-// } from 'bun:test';
+import {
+  describe, test, expect, mock, beforeEach,
+} from 'bun:test';
 
-// import Bakery from '#lib/Bakery';
+import Bakery from '#lib/Bakery';
 
-// describe('lib - class "Bakery"', async () => {
-//   test('structuredClone', async () => {
-//     const obj = { a: 1, b: 2, o: { c: 3, d: 4 } };
-//     const cloned = structuredClone(obj);
-//     expect(cloned).toEqual(obj);
-//     expect(cloned).not.toBe(obj);
-//   });
-// });
+describe('lib - class "Bakery"', async () => {
+  let bakery;
+
+  beforeEach(() => {
+    bakery = new Bakery();
+  });
+
+  // test('addSteps should add steps', () => {
+  //   const step = mock();
+  //   bakery.addSteps(step);
+  //   expect(bakery.steps).toContain(step);
+  // });
+
+  // test('addSteps should throw error when steps are not functions', () => {
+  //   expect(() => {
+  //     bakery.addSteps('not a function');
+  //   }).toThrow(TypeError);
+  // });
+
+  // test('addSteps should warn when no steps are added', () => {
+  //   console.warn = mock();
+  //   bakery.addSteps();
+  //   expect(console.warn).toHaveBeenCalledWith('no steps to add');
+  // });
+});
