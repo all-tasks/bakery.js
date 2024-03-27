@@ -2,11 +2,13 @@
 
 import Bakery from '#bakery';
 
+const port = 6000;
+
 const bakery = new Bakery({
-  port: 6000,
+  port,
 });
 
-let willTriggerError = true;
+// let willTriggerError = true;
 
 bakery.addSteps(
   async function logger() {
@@ -20,17 +22,19 @@ bakery.addSteps(
     this.response.body = 'Welcome to bakery.js!';
     this.steps.after(async function afterWelcome() {
       this.response.body += ' Hope you enjoy it';
-      await this.steps.next();
+      await this.next();
     });
     await this.steps.next();
-    this.response.body += ' Have a wonderful day!';
+    this.response.body += ' and have a wonderful day!';
   },
-  async () => {
-    if (willTriggerError) throw new Error('error');
-  },
+  // async () => {
+  //   if (willTriggerError) throw new Error('error');
+  // },
 );
 
-await fetch('http://localhost:6000/users?role=admin')
+const host = `http://localhost:${port}`;
+
+await fetch(`${host}/api/users?role=admin`)
   .then((res) => {
     console.debug(res);
     return res.text();
@@ -38,12 +42,12 @@ await fetch('http://localhost:6000/users?role=admin')
     if (res)console.debug(`fetch: ${res}`);
   });
 
-willTriggerError = false;
+// willTriggerError = false;
 
-await fetch('http://localhost:6000/users?role=admin')
-  .then((res) => {
-    console.debug(res);
-    return res.text();
-  }).then((res) => {
-    if (res)console.debug(`fetch: ${res}`);
-  });
+// await fetch('http://localhost:6000/users?role=admin')
+//   .then((res) => {
+//     console.debug(res);
+//     return res.text();
+//   }).then((res) => {
+//     if (res)console.debug(`fetch: ${res}`);
+//   });

@@ -152,62 +152,67 @@ class Router {
     }
   }
 
-  async routing() {
-    try {
-      const { method, path } = this.request;
+  routing() {
+    let currentNode = this.routeTree;
 
-      let currentNode = this.routeTree;
+    const { methodSteps } = this;
 
-      const params = {};
+    return async function routing() {
+      try {
+        const { method, path } = this.request;
 
-      const steps = [];
+        const params = {};
 
-      const segments = path.split('/').filter((segment) => (segment));
+        const steps = [];
 
-      for (const segment of segments) {
-        steps.push(...currentNode.steps);
-        currentNode = currentNode.nodes[segment] || currentNode.nodes[':param'];
+        const segments = path.split('/').filter((segment) => (segment));
 
-        if (currentNode === undefined) { break; }
+        for (const segment of segments) {
+          steps.push(...currentNode.steps);
+          currentNode = currentNode.nodes[segment] || currentNode.nodes[':param'];
 
-        if (currentNode.params) {
-          currentNode.params.forEach((param) => {
-            if (params[param] !== undefined) {
-              console.warn(`param ${param} already exists, will be overwritten`);
-            }
-            params[param] = segment;
-          });
+          if (currentNode === undefined) { break; }
+
+          if (currentNode.params) {
+            currentNode.params.forEach((param) => {
+              if (params[param] !== undefined) {
+                console.warn(`param ${param} already exists, will be overwritten`);
+              }
+              params[param] = segment;
+            });
+          }
         }
-      }
 
-      if (currentNode === undefined || !currentNode.routes.length) {
-        this.response.status = 404;
+        if (currentNode === undefined || !Object.keys(currentNode.routes).length) {
+          this.response.status = 404;
+          return this.steps.next();
+        }
+
+        const matchedRoute = currentNode.routes[method];
+
+        if (matchedRoute === undefined) {
+          this.response.status = 405;
+          return this.steps.next();
+        }
+
+        this.response.status = 200;
+
+        this.route = matchedRoute.proxy;
+
+        this.request.params = Object.freeze({ ...params });
+
+        this.steps.after(
+          ...steps,
+          ...methodSteps[method],
+          ...matchedRoute.steps,
+        );
+
         return this.steps.next();
+      } catch (error) {
+        console.error(`routing error: ${error.message}`);
+        throw error;
       }
-
-      const matchedRoute = currentNode[method];
-
-      if (matchedRoute === undefined) {
-        this.response.status = 405;
-        return this.steps.next();
-      }
-
-      this.response.status = 200;
-
-      this.route = matchedRoute.proxy;
-
-      this.request.params = Object.freeze({ ...params });
-
-      this.steps.after(...steps, ...matchedRoute.steps);
-
-      return this.steps.next();
-    } catch (error) {
-      console.error(`routing error: ${error.message}`);
-      console.error(error);
-
-      this.response.status = 500;
-      return this.steps.next();
-    }
+    };
   }
 
   // getAllRoutes() {
