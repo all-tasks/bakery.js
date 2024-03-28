@@ -9,7 +9,7 @@ class Node {
 
   #params;
 
-  #steps;
+  #steps = [];
 
   #nodes = {};
 
@@ -21,8 +21,10 @@ class Node {
     const param = segment.match(/^:([\w-.]+)$/)?.[1];
 
     this.#segment = param === undefined ? segment : ':param';
+
     this.#params = new Set(param === undefined ? [] : [param]);
-    this.#steps = steps;
+
+    if (steps.length) this.#steps.push(...steps);
 
     Object.defineProperties(this, {
       segment: {
@@ -55,11 +57,14 @@ class Node {
       return this;
     }
 
-    if (params.some((param) => typeof param !== 'string')) {
-      throw new TypeError('param must be string');
-    }
-
-    this.#params = new Set([...this.#params, ...params]);
+    params.forEach((param) => {
+      param = typeof param === 'string' && param.match(/^:?([\w-.]+)$/)?.[1];
+      if (param) {
+        this.#params.add(param);
+      } else {
+        throw new TypeError('param must be string and match /^:?([\\w-.]+)$/ pattern');
+      }
+    });
 
     return this;
   }
@@ -101,10 +106,34 @@ class Node {
     return this.#nodes[segment];
   }
 
-  margeNode(node) {
-    // validate argument in margeNode
+  margeNode(scion) {
+    if (!(scion instanceof Node)) {
+      throw new TypeError('scion must be an instance of Node');
+    }
+    try {
+      if (scion.params.length) this.addParams(...scion.params);
 
-    Node.margeNode(this, node);
+      if (scion.steps.length) this.addSteps(...scion.steps);
+
+      Object.entries(scion.nodes).forEach(([segment, node]) => {
+        if (this.nodes[segment] === undefined) {
+          this.#nodes[segment] = node;
+        } else {
+          this.nodes[segment].margeNode(node);
+        }
+      });
+
+      Object.entries(scion.routes).forEach(([method, route]) => {
+        if (this.routes[method] === undefined) {
+          this.#routes[method] = route;
+        } else {
+          console.warn(`method [${method}] already exists in node [${this.segment}], merging method will be ignored`);
+        }
+      });
+    } catch (error) {
+      console.error(`margeNode error: ${error.message}`);
+      throw error;
+    }
 
     return this;
   }
@@ -125,41 +154,6 @@ class Node {
 
   toString(replacer, space) {
     return JSON.stringify(this, replacer, space);
-  }
-
-  static margeNode(stock, scion) {
-    // eslint-disable-next-line no-use-before-define
-    if (!(stock instanceof Node)) {
-      throw new TypeError('stock must be an instance of Node');
-    }
-    // eslint-disable-next-line no-use-before-define
-    if (!(scion instanceof Node)) {
-      throw new TypeError('scion must be an instance of Node');
-    }
-    try {
-      stock.params = new Set([...stock.params, ...scion.params]);
-
-      stock.addSteps(...scion.steps);
-
-      Object.entries(scion.nodes).forEach(([segment, node]) => {
-        if (stock.nodes[segment] === undefined) {
-          stock.nodes[segment] = node;
-        } else {
-          Node.margeNode(stock.nodes[segment], scion.nodes[segment]);
-        }
-      });
-
-      Object.entries(scion.routes).forEach(([method, route]) => {
-        if (stock.routes[method] === undefined) {
-          stock.routes[method] = route;
-        } else {
-          console.warn(`method [${method}] already exists in node [${stock.segment}], merging method will be ignored`);
-        }
-      });
-    } catch (error) {
-      console.error(`margeNode error: ${error.message}`);
-      throw error;
-    }
   }
 }
 

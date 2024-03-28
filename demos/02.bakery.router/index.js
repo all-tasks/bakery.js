@@ -30,7 +30,12 @@ router.addGlobalSteps(
 router.addRoute('GET:/users', async function getUsers() {
   console.info(JSON.stringify({ query: this.request.query }));
   this.response.body = 'get users';
-  await this.steps.next();
+  return this.steps.next();
+});
+
+router.addRoute('GET:/users/:id', async function getUser() {
+  console.info(JSON.stringify({ params: this.request.params }));
+  return this.steps.next();
 });
 
 bakery.addSteps(
@@ -47,7 +52,23 @@ await fetch(`${host}/api/users?role=admin`)
     if (res)console.debug(`fetch: ${res}`);
   });
 
+await fetch(`${host}/api/users/100`)
+  .then((res) => {
+    console.debug(res);
+    return res.text();
+  }).then((res) => {
+    if (res)console.debug(`fetch: ${res}`);
+  });
+
 await fetch(`${host}/api/users`, { method: 'POST' })
+  .then((res) => {
+    console.debug(res);
+    return res.text();
+  }).then((res) => {
+    if (res)console.debug(`fetch: ${res}`);
+  });
+
+await fetch(`${host}/api/accounts`)
   .then((res) => {
     console.debug(res);
     return res.text();

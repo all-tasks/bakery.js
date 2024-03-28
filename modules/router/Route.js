@@ -7,7 +7,7 @@ class Route {
 
   #path;
 
-  #steps;
+  #steps = [];
 
   #meta;
 
@@ -18,7 +18,7 @@ class Route {
 
     this.#path = path;
 
-    this.#steps = steps;
+    this.#steps.push(...steps);
 
     Object.defineProperties(this, {
       method: {

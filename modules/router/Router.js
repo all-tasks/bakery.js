@@ -119,7 +119,9 @@ class Router {
       console.warn('merge will ignore argument router\'s "methodSteps"');
     }
 
-    Node.margeNode(this.routeTree, router.routeTree);
+    this.routeTree.margeNode(router.routeTree);
+
+    return this;
   }
 
   async globMerge(globPath) {
@@ -153,12 +155,12 @@ class Router {
   }
 
   routing() {
-    let currentNode = this.routeTree;
-
-    const { methodSteps } = this;
+    const { routeTree, methodSteps } = this;
 
     return async function routing() {
       try {
+        let currentNode = routeTree;
+
         const { method, path } = this.request;
 
         const params = {};
@@ -169,6 +171,7 @@ class Router {
 
         for (const segment of segments) {
           steps.push(...currentNode.steps);
+
           currentNode = currentNode.nodes[segment] || currentNode.nodes[':param'];
 
           if (currentNode === undefined) { break; }
