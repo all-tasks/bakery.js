@@ -11,12 +11,12 @@ class Route {
 
   #meta;
 
-  constructor(method, path, ...steps) {
-    validateArgument.all({ method, path, steps });
+  constructor(method, routePath, ...steps) {
+    validateArgument.all({ method, routePath, steps });
 
     this.#method = method;
 
-    this.#path = path;
+    this.#path = routePath;
 
     this.#steps.push(...steps);
 
@@ -34,6 +34,10 @@ class Route {
       steps: {
         enumerable: true,
         get: () => Object.freeze([...this.#steps]),
+      },
+      meta: {
+        enumerable: true,
+        get: () => Object.freeze({ ...this.#meta }),
       },
     });
 
@@ -70,13 +74,13 @@ class Route {
     return this;
   }
 
-  toString(replacer, space) {
-    return JSON.stringify(this, replacer, space);
+  toString(space) {
+    return JSON.stringify(this, ['method', 'path', 'meta'], space);
   }
 
   static parseRoutePath(routePath) {
     try {
-      if (typeof routePath !== 'string' || routePath.length === 0) {
+      if (typeof routePath !== 'string' || !routePath) {
         throw new TypeError('routePath must be a non-empty string');
       }
 

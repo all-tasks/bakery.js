@@ -10,7 +10,8 @@ describe('module "router" - class "Node"', async () => {
   test('validate arguments', async () => {
     expect(() => { new Node(); }).toThrow();
     expect(() => { new Node(true, true); }).toThrow();
-    expect(() => { new Node('@@', [true]); }).toThrow();
+    expect(() => { new Node('@@', true); }).toThrow();
+    expect(() => { new Node('users', true); }).toThrow();
     expect(() => { new Node('users'); }).not.toThrow();
   });
   test('set "segment", and readonly', async () => {
@@ -86,5 +87,9 @@ describe('module "router" - class "Node"', async () => {
     expect(() => { node.addRoute('GET', 'GET:/api/users'); }).not.toThrow();
     expect(() => { node.addRoute('GET', 'GET:/api/users', () => {}); }).toThrow();
     expect(Object.keys(node.routes).length).toBe(1);
+  });
+  test('method "toString"', async () => {
+    const node = new Node('users');
+    expect(node.toString()).toBe('{"segment":"users","params":[],"steps":[],"nodes":{},"routes":{}}');
   });
 });

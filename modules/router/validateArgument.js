@@ -11,9 +11,14 @@ const validateArgument = {
       console.warn(`method ${value} is not a valid HTTP method`);
     }
   },
-  path(value) {
-    if (typeof value !== 'string' || !value.match(/^[\w-./:]*$/)) {
-      throw new TypeError('path must be a string, like "/api/resources/:id"');
+  // path(value) {
+  //   if (typeof value !== 'string' || !value.match(/^[\w-./:]*$/)) {
+  //     throw new TypeError('path must be a string, like "/api/resources/:id"');
+  //   }
+  // },
+  routePath(value) {
+    if (typeof value !== 'string' || !value.match(/^[A-Z-]+:\/[\w-./:]*$/)) {
+      throw new TypeError('routePath must be a string, like "GET:/api/resources/:id"');
     }
   },
   segment(value) {
