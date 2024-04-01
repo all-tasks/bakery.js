@@ -9,6 +9,15 @@ class Route {
 
   #steps = [];
 
+  #proxy = new Proxy(this, {
+    get(target, property) {
+      return (property === 'proxy' || typeof target[property] === 'function') ? undefined : target[property];
+    },
+    set() {
+      throw new Error('route is immutable');
+    },
+  });
+
   #meta;
 
   constructor(method, routePath, ...steps) {
@@ -35,18 +44,13 @@ class Route {
         enumerable: true,
         get: () => Object.freeze([...this.#steps]),
       },
+      proxy: {
+        enumerable: true,
+        get: () => this.#proxy,
+      },
       meta: {
         enumerable: true,
         get: () => Object.freeze({ ...this.#meta }),
-      },
-    });
-
-    this.proxy = new Proxy(this, {
-      get(target, property) {
-        return (property === 'proxy' || typeof target[property] === 'function') ? undefined : target[property];
-      },
-      set() {
-        throw new Error('route is immutable');
       },
     });
   }
@@ -92,7 +96,7 @@ class Route {
 
       const segments = path.match(/((?<=\/):?[\w-.]+(?![\w-.]*[:]))+/g) || [];
 
-      if (segments.length !== path.match(/((?<=\/)[\w-.:]+)+/g).length) {
+      if (segments.length !== path.split('/').filter((segment) => segment).length) {
         throw new TypeError('invalid routePath');
       }
 

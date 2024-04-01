@@ -37,6 +37,8 @@ class Router {
 
     this.#methodSteps = methodSteps;
 
+    const router = this;
+
     Object.defineProperties(this, {
       prefix: {
         enumerable: true,
@@ -59,9 +61,11 @@ class Router {
             .map(([key, value]) => ([key, Object.freeze([...value])]))));
         },
       },
+      addRoute: {
+        writable: false,
+        value: this.route.bind(router),
+      },
     });
-
-    this.addRoute = this.route.bind(this);
   }
 
   addGlobalSteps(...steps) {
@@ -71,6 +75,11 @@ class Router {
   }
 
   addMethodSteps(method, ...steps) {
+    if (steps.length === 0) {
+      console.warn('no steps to add');
+      return this;
+    }
+
     method = method.toUpperCase();
 
     validateArgument.all({ method, steps });
@@ -125,6 +134,9 @@ class Router {
   }
 
   async globMerge(globPath) {
+    if (typeof globPath !== 'string' || !globPath) {
+      throw new TypeError('argument globPath must be a non-empty string');
+    }
     try {
       const files = await glob(globPath);
 
@@ -218,8 +230,40 @@ class Router {
     };
   }
 
-  // getAllRoutes() {
-  // }
+  getAllRoutes(format = 'array') {
+    if (format !== 'array' && format !== 'object') {
+      throw new TypeError('argument format must be "array" or "object"');
+    }
+
+    const nodes = [{ path: '', node: this.routeTree }];
+    let routes = [];
+
+    while (nodes.length) {
+      const { path, node } = nodes.shift();
+
+      Object.entries(node.nodes).forEach(([segment, childNode]) => {
+        nodes.push({ path: `${path}/${segment}`, node: childNode });
+      });
+
+      // eslint-disable-next-line no-loop-func
+      Object.values(node.routes).forEach((route) => {
+        routes.push({ path, route });
+      });
+    }
+
+    routes = routes.sort((a, b) => {
+      const result = a.path.replace(':', 'Ѐ').localeCompare(b.path.replace(':', 'Ѐ'));
+      return result !== 0 ? result : (() => {
+        const methods = ['DELETE', 'PATCH', 'PUT', 'GET', 'POST'];
+        return methods.findIndex((method) => (method === b.route.method))
+       - methods.findIndex((method) => (method === a.route.method));
+      })();
+    });
+
+    return format === 'array'
+      ? routes.map(({ route }) => (route))
+      : Object.fromEntries(routes.map(({ route }) => ([route.path, route])));
+  }
 
   toString(replacer, space) {
     return JSON.stringify(this, replacer, space);
@@ -232,7 +276,6 @@ factoryMethods.forEach((method) => {
   // eslint-disable-next-line
   Router.prototype[method] = Router.prototype[method.toLowerCase()] = function factoryMethod(path, ...steps) {
     validateArgument.all({ path, steps });
-
     this.route(`${method}:${path}`, ...steps);
     return this;
   };

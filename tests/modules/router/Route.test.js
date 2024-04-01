@@ -14,12 +14,19 @@ describe('module "router" - class "Route"', async () => {
     expect(() => { new Route('GET', true, true); }).toThrow();
     expect(() => { new Route('GET', '@@', true); }).toThrow();
     expect(() => { new Route('GET', 'GET:/api/users', true); }).toThrow();
+    expect(() => { new Route('GET', 'GET:/', () => {}); }).not.toThrow();
     expect(() => { new Route('GET', 'GET:/api/users', () => {}); }).not.toThrow();
     console.warn = mock();
     new Route('GET', 'GET:/api/users');
     expect(console.warn).not.toBeCalled();
     new Route('ABC', 'ABC:/api/users');
     expect(console.warn).toBeCalled();
+  });
+  test('all "route" properties are readonly', async () => {
+    const route = new Route('GET', 'GET:/api/users');
+    Object.keys(route).forEach((key) => {
+      expect(() => { route[key] = true; }).toThrow();
+    });
   });
   test('set "method", and readonly', async () => {
     const route = new Route('GET', 'GET:/api/users', () => {});
@@ -73,10 +80,10 @@ describe('module "router" - class "Route"', async () => {
     const route = new Route('GET', 'GET:/api/users');
     expect(route.toString()).toBe('{"method":"GET","path":"GET:/api/users","meta":{}}');
   });
-
   test('static method "parseRoutePath"', async () => {
     expect(() => { Route.parseRoutePath(); }).toThrow();
     expect(() => { Route.parseRoutePath(''); }).toThrow();
+    expect(() => { Route.parseRoutePath('GET:/api/users/::id'); }).toThrow();
     expect(Route.parseRoutePath('GET:/api/users')).toEqual({
       method: 'GET',
       path: '/api/users',

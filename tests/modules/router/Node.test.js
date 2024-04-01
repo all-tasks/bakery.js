@@ -14,6 +14,12 @@ describe('module "router" - class "Node"', async () => {
     expect(() => { new Node('users', true); }).toThrow();
     expect(() => { new Node('users'); }).not.toThrow();
   });
+  test('all "node" properties are readonly', async () => {
+    const node = new Node('users');
+    Object.keys(node).forEach((key) => {
+      expect(() => { node[key] = true; }).toThrow();
+    });
+  });
   test('set "segment", and readonly', async () => {
     const node = new Node('users');
     expect(node.segment).toBe('users');
