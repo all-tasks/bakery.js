@@ -76,8 +76,32 @@ describe('module "router" - class "Router"', async () => {
     const router = new Router({ prefix: '/api' });
     expect(async () => { await router.globMerge(); }).toThrow();
   });
-  test.todo('method "routing"', async () => {
-
+  test('method "routing"', async () => {
+    const router = new Router({ prefix: '/api' });
+    const everyGet = mock();
+    router.addMethodSteps('GET', everyGet);
+    const getUsers = mock();
+    router.addRoute('GET:/users/:id', getUsers);
+    const context = {
+      request: {
+        method: 'GET',
+        path: '/api/users/100',
+        params: [],
+      },
+      response: {
+        status: 400,
+      },
+      steps: {
+        after: mock(),
+        next: mock(),
+      },
+    };
+    router.routing().apply(context);
+    expect(context.route).toBeDefined();
+    expect(context.request.params).toEqual({ id: '100' });
+    expect(context.response.status).toBe(200);
+    expect(context.steps.after).toHaveBeenCalledWith(everyGet, getUsers);
+    expect(context.steps.next).toHaveBeenCalledTimes(1);
   });
   test('method "getAllRoutes"', async () => {
     const router = new Router({ prefix: '/api' });

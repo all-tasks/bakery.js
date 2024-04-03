@@ -218,7 +218,7 @@ class Router {
 
         this.steps.after(
           ...steps,
-          ...methodSteps[method],
+          ...(methodSteps[method] || []),
           ...matchedRoute.steps,
         );
 
