@@ -4,7 +4,7 @@ import Bakery from '#bakery';
 
 import { Router } from '#modules';
 
-const port = 6001;
+const port = 6010;
 
 const bakery = new Bakery({
   port,

@@ -13,9 +13,9 @@ const bakery = new Bakery({
 bakery.addSteps(
   async function logger() {
     this.logger = console;
-    console.info(`request "${this.request.method}:${this.request.url}"`);
+    console.info(`request "${this.request.method}:${this.request.path}"`);
     await this.steps.next();
-    console.info(`response "${this.request.method}:${this.request.url}"`);
+    console.info(`response "${this.request.method}:${this.request.path}"`);
   },
   async function welcome() {
     this.logger.info('---- welcome ----');

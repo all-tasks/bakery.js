@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bakery.js SSE Demo</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    body {
+      min-width: 320px;
+      max-width: 640px;
+      padding: 0;
+      background: #F4F4F4;
+      margin: 0 auto;
+      font: 16px/1.5 sans-serif;
+      font-weight: 100;
+    }
+    header {
+      position: sticky;
+      text-align: center;
+    }
+    h1{
+      font-weight: 100;
+    }
+    #message{
+      position: relative;
+      width: 100%;
+    }
+    #message-input{
+      appearance: none;
+      width: 100%;
+      padding: 0 64px 0 16px;
+      border: solid 2px #999;
+      border-radius: 8px;
+      font-size: 32px;
+      line-height: 64px;
+      font-weight: 100;
+      text-align: left;
+    }
+    #message-submit{
+      all: unset;
+      appearance: none;
+      position: absolute;
+      top: 0;
+      right: 16px;
+      padding: 0 8px;
+      border: solid 1px #DDD;
+      border-radius: 4px;
+      margin: 20px 0;
+      color:#999;
+      font-size: 12px;
+      line-height: 24px;
+      text-transform: uppercase;
+    }
+    #message-submit span{
+      position: relative;
+      top:2px;
+      opacity:.6;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Bakery.js SSE Demo</h1>
+  <div id="message">
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Enter your message">
+      <button type="submit" id="message-submit">Send <span>↩︎</span></button>
+  </div>
+</header>
+<main>
+  <ul id="messages"></ul>
+</main>
+</body>
+<script>
+const eventSource = new EventSource('http://localhost:6004/sse');
+
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.debug('new message received:', data);
+};
+
+document.getElementById('message-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const message = document.getElementById('message-input').value;
+  console.log(message)
+  if (message.length) {
+    fetch('http://localhost:6004/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: message,
+    }).finally(() => {
+      document.getElementById('message-input').value = '';
+    });
+  }
+
+});
+</script>
+</html>
