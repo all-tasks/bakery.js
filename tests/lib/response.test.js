@@ -68,20 +68,12 @@ describe('lib - function "createResponse"', async () => {
     expect(response.type).toBe('application/json');
   });
 
-  test('set body as string', async () => {
-    console.warn = mock();
+  test('set body as an object', async () => {
     const response = createResponse();
-    response.status = 204;
-    response.body = 'body';
-    expect(console.warn).toHaveBeenCalledTimes(1);
-    expect(response.body).toBe('body');
-    expect(response.type).toBe('text/plain');
-  });
-
-  test('set body as a Blob instance', async () => {
-    const response = createResponse();
-    response.body = new Blob(['body'], { type: 'image/png' });
-    expect(response.type).toBe('image/png');
+    response.body = { key: 'value' };
+    expect(response.type).toBe('application/json');
+    expect(response.body).toEqual({ key: 'value' });
+    expect(response.stringedBody).toBe(JSON.stringify({ key: 'value' }));
   });
 
   test('set body as a FormData instance', async () => {
@@ -96,12 +88,28 @@ describe('lib - function "createResponse"', async () => {
     expect(response.type).toBe('application/x-www-form-urlencoded');
   });
 
-  test('set body as an object', async () => {
+  test('set body as a Blob instance', async () => {
     const response = createResponse();
-    response.body = { key: 'value' };
-    expect(response.type).toBe('application/json');
-    expect(response.body).toEqual({ key: 'value' });
-    expect(response.stringedBody).toBe(JSON.stringify({ key: 'value' }));
+    response.body = new Blob(['body'], { type: 'image/png' });
+    expect(response.type).toBe('image/png');
+  });
+
+  test('set body as HTML', async () => {
+    console.warn = mock();
+    const response = createResponse();
+    response.body = '<!DOCTYPE HTML><html></html>';
+    expect(response.body).toBe('<!DOCTYPE HTML><html></html>');
+    expect(response.type).toBe('text/html');
+  });
+
+  test('set body as string', async () => {
+    console.warn = mock();
+    const response = createResponse();
+    response.status = 204;
+    response.body = 'body';
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect(response.body).toBe('body');
+    expect(response.type).toBe('text/plain');
   });
 
   test('update status code after set body', async () => {
@@ -117,5 +125,10 @@ describe('lib - function "createResponse"', async () => {
     expect(response.status).toBe(201);
     response.body = { key: 'value' };
     expect(response.status).toBe(201);
+  });
+
+  test('set body with invalid type', async () => {
+    const response = createResponse();
+    expect(() => { response.invalid = 'invalid'; }).toThrow();
   });
 });

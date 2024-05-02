@@ -1,5 +1,5 @@
 import {
-  describe, test, expect,
+  describe, test, expect, mock,
 } from 'bun:test';
 
 import createRequest from '#lib/request';
@@ -16,6 +16,11 @@ describe('lib - function "createRequest"', async () => {
       host: 'localhost:6000',
       'accept-encoding': 'gzip, deflate, br',
     }),
+    arrayBuffer: mock(),
+    blob: mock(),
+    formData: mock(),
+    json: mock(),
+    text: mock(),
   });
 
   const req = createReq();
@@ -52,5 +57,36 @@ describe('lib - function "createRequest"', async () => {
 
   test('set property', async () => {
     expect(() => { request.method = 'POST'; }).toThrow();
+  });
+
+  test('get body will call reader', async () => {
+    request.body();
+    expect(req.json).toHaveBeenCalledTimes(1);
+  });
+
+  test('pick body reader by type', async () => {
+    req.headers.set('content-type', 'text/html');
+
+    const requestWithTextType = createRequest(req);
+
+    requestWithTextType.body();
+
+    expect(req.text).toHaveBeenCalledTimes(1);
+
+    req.headers.set('content-type', 'multipart/form-data');
+
+    const requestWithFormData = createRequest(req);
+
+    requestWithFormData.body();
+
+    expect(req.formData).toHaveBeenCalledTimes(1);
+  });
+
+  test('throw error for invalid body reader', async () => {
+    req.headers.set('content-type', 'invalid');
+
+    const requestWithInvalidType = createRequest(req);
+
+    await expect(requestWithInvalidType.body('invalid')).rejects.toThrow();
   });
 });

@@ -82,6 +82,7 @@ const eventSource = new EventSource('http://localhost:6004/sse');
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.debug('new message received:', data);
+  renderMessage(data.message);
 };
 
 document.getElementById('message-form').addEventListener('submit', (event) => {
@@ -99,7 +100,12 @@ document.getElementById('message-form').addEventListener('submit', (event) => {
       document.getElementById('message-input').value = '';
     });
   }
-
 });
+
+function renderMessage(message) {
+  const li = document.createElement('li');
+  li.textContent = message;
+  document.getElementById('messages').appendChild(li);
+}
 </script>
 </html>

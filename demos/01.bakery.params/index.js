@@ -42,10 +42,7 @@ bakery.addSteps(
 const host = `http://localhost:${port}`;
 
 await fetch(`${host}/api/users?role=admin`)
-  .then((res) => {
-    console.debug({ res });
-    return res.json();
-  }).then((res) => {
+  .then((res) => res.json()).then((res) => {
     if (res)console.debug({ res });
   });
 
@@ -58,9 +55,6 @@ await fetch(`${host}/api/users`, {
     name: 'lane',
     role: 'admin',
   }),
-}).then((res) => {
-  console.debug({ res });
-  return res.json();
-}).then((res) => {
+}).then((res) => res.json()).then((res) => {
   if (res)console.debug({ res });
 });

@@ -33,9 +33,7 @@ bakery.addSteps(
         return;
       }
       case 'POST:/message': {
-        const message = await this.request.body;
-
-        console.log('message', JSON.stringify(message));
+        const message = await this.request.body();
 
         [...clients].forEach((receiver) => {
           receiver.enqueue(`data: ${JSON.stringify({ time: new Date().getTime(), message })}\n\n`);
