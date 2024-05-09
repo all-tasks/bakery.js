@@ -19,7 +19,7 @@ describe('lib - function "createRequest"', async () => {
     arrayBuffer: mock(),
     blob: mock(),
     formData: mock(),
-    json: mock(),
+    json: mock(async () => ({ test: 'test' })),
     text: mock(),
   });
 
@@ -59,8 +59,9 @@ describe('lib - function "createRequest"', async () => {
     expect(() => { request.method = 'POST'; }).toThrow();
   });
 
-  test('get body will call reader', async () => {
-    request.body();
+  test('get body will call reader only once and use cache after', async () => {
+    await request.body();
+    await request.body();
     expect(req.json).toHaveBeenCalledTimes(1);
   });
 
