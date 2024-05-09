@@ -21,9 +21,9 @@ router.addMethodSteps('GET', async function getMethod() {
 
 router.addGlobalSteps(
   async function logger() {
-    console.info(`request "${this.request.method}:${this.request.url}"`);
+    console.info(`request "${this.request.method}:${this.request.path}"`);
     await this.steps.next();
-    console.info(`response "${this.request.method}:${this.request.url}"`);
+    console.info(`response "${this.request.method}:${this.request.path}"`);
   },
 );
 

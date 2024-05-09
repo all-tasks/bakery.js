@@ -177,16 +177,16 @@ class Router {
 
         const params = {};
 
-        const steps = [];
+        const steps = [...currentNode.steps];
 
         const segments = path.split('/').filter((segment) => (segment));
 
         for (const segment of segments) {
-          steps.push(...currentNode.steps);
-
           currentNode = currentNode.nodes[segment] || currentNode.nodes[':param'];
 
           if (currentNode === undefined) { break; }
+
+          steps.push(...currentNode.steps);
 
           if (currentNode.params) {
             currentNode.params.forEach((param) => {
