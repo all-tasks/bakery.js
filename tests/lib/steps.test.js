@@ -1,6 +1,6 @@
 import {
-  describe, test, expect, mock,
-} from 'bun:test';
+  describe, test, expect,
+} from 'vitest';
 
 import runSteps from '#lib/steps';
 

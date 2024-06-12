@@ -2,7 +2,7 @@
 
 import {
   describe, test, expect,
-} from 'bun:test';
+} from 'vitest';
 
 import { Node } from '#modules/router';
 

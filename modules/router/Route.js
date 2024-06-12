@@ -113,6 +113,43 @@ class Route {
       throw error;
     }
   }
+
+  static matchRoutePath(routePath, method, path) {
+    try {
+      if (typeof routePath !== 'string' || !routePath) {
+        throw new TypeError('routePath must be a non-empty string');
+      }
+
+      if (typeof method !== 'string' || !method) {
+        throw new TypeError('method must be a non-empty string');
+      }
+
+      if (typeof path !== 'string' || !path) {
+        throw new TypeError('path must be a non-empty string');
+      }
+
+      const { method: routeMethod, path: rPath, params } = Route.parseRoutePath(routePath);
+
+      if (method !== routeMethod) {
+        return false;
+      }
+
+      console.log(params);
+
+      // if (params.length === 0) {
+      //   return path === rPath;
+      // }
+
+      // const regex = new RegExp(`^${rPath.replace(/(:[\w-.]+)/g, '([\\w-.]+)')}$`);
+
+      // console.log(regex);
+
+      // return path.match(regex);
+    } catch (error) {
+      console.error();
+      throw error;
+    }
+  }
 }
 
 export default Route;

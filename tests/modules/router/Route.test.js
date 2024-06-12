@@ -1,8 +1,8 @@
 /* eslint-disable no-new */
 
 import {
-  describe, test, expect, mock,
-} from 'bun:test';
+  describe, test, expect, vi,
+} from 'vitest';
 
 import { Route } from '#modules/router';
 
@@ -16,7 +16,7 @@ describe('module "router" - class "Route"', async () => {
     expect(() => { new Route('GET', 'GET:/api/users', true); }).toThrow();
     expect(() => { new Route('GET', 'GET:/', () => {}); }).not.toThrow();
     expect(() => { new Route('GET', 'GET:/api/users', () => {}); }).not.toThrow();
-    console.warn = mock();
+    console.warn = vi.fn();
     new Route('GET', 'GET:/api/users');
     expect(console.warn).not.toBeCalled();
     new Route('ABC', 'ABC:/api/users');
@@ -95,5 +95,8 @@ describe('module "router" - class "Route"', async () => {
       segments: ['api', 'users', ':id', ':action'],
       params: ['id', 'action'],
     });
+  });
+  test.skip('static method "matchRoutePath"', async () => {
+    expect(Route.matchRoutePath('GET:/api/users', 'GET', '/api/users')).toBe(true);
   });
 });

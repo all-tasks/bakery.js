@@ -1,6 +1,6 @@
 import {
-  describe, test, expect, mock,
-} from 'bun:test';
+  describe, test, expect, vi,
+} from 'vitest';
 
 import createRequest from '#lib/request';
 
@@ -9,6 +9,7 @@ describe('lib - function "createRequest"', async () => {
     method: 'GET',
     url: 'http://localhost:6000/users?role=admin&array=1&array=2&array=3',
     headers: new Headers({
+      cookie: 'session=2718281828; user=John Doe',
       connection: 'keep-alive',
       'user-agent': 'Bun/1.0.26',
       'content-type': 'application/json',
@@ -16,11 +17,11 @@ describe('lib - function "createRequest"', async () => {
       host: 'localhost:6000',
       'accept-encoding': 'gzip, deflate, br',
     }),
-    arrayBuffer: mock(),
-    blob: mock(),
-    formData: mock(),
-    json: mock(async () => ({ test: 'test' })),
-    text: mock(),
+    arrayBuffer: vi.fn(),
+    blob: vi.fn(),
+    formData: vi.fn(),
+    json: vi.fn(async () => ({ test: 'test' })),
+    text: vi.fn(),
   });
 
   const req = createReq();
@@ -29,6 +30,8 @@ describe('lib - function "createRequest"', async () => {
 
   test('get property from req', async () => {
     expect(request.method).toBe('GET');
+    const { method } = request;
+    expect(method).toBe('GET');
   });
 
   test('get property by alias', async () => {
@@ -45,6 +48,8 @@ describe('lib - function "createRequest"', async () => {
 
   test('get property from query', async () => {
     expect(request.query.role).toBe('admin');
+    const { role } = request.query;
+    expect(role).toBe('admin');
   });
 
   test('get property from query with multiple values', async () => {
@@ -53,6 +58,10 @@ describe('lib - function "createRequest"', async () => {
 
   test('get property type', async () => {
     expect(request.type).toBe('application/json');
+  });
+
+  test('get property cookies', async () => {
+    expect(request.cookies).toEqual({ session: '2718281828', user: 'John Doe' });
   });
 
   test('set property', async () => {

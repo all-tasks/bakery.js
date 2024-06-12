@@ -1,6 +1,6 @@
 import {
-  describe, test, expect,
-} from 'bun:test';
+  describe, test,
+} from 'vitest';
 
 import createContext from '#lib/context';
 

@@ -1,8 +1,8 @@
 /* eslint-disable no-new */
 
 import {
-  describe, test, expect, mock,
-} from 'bun:test';
+  describe, test, expect, vi,
+} from 'vitest';
 
 import { Router } from '#modules/router';
 
@@ -61,7 +61,7 @@ describe('module "router" - class "Router"', async () => {
     expect(router.routeTree.nodes.api.nodes.users.nodes[':param'].routes.GET).toBeDefined();
   });
   test('method "merge"', async () => {
-    console.warn = mock();
+    console.warn = vi.fn();
     const router = new Router({ prefix: '/api' });
     expect(() => { router.merge(); }).toThrow();
     expect(() => { router.merge({}); }).toThrow();
@@ -78,9 +78,9 @@ describe('module "router" - class "Router"', async () => {
   });
   test('method "routing"', async () => {
     const router = new Router({ prefix: '/api' });
-    const everyGet = mock();
+    const everyGet = vi.fn();
     router.addMethodSteps('GET', everyGet);
-    const getUsers = mock();
+    const getUsers = vi.fn();
     router.addRoute('GET:/users/:id', getUsers);
     const context = {
       request: {
@@ -92,8 +92,8 @@ describe('module "router" - class "Router"', async () => {
         status: 400,
       },
       steps: {
-        after: mock(),
-        next: mock(),
+        after: vi.fn(),
+        next: vi.fn(),
       },
     };
     router.routing().apply(context);
