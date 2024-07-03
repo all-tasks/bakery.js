@@ -32,6 +32,11 @@ describe('lib - function "createResponse"', async () => {
     expect(() => { createResponse({ type: 0 }); }).toThrow();
   });
 
+  test('set type when creating response', async () => {
+    const response = createResponse({ type: 'application/json' });
+    expect(response.header['Content-Type']).toEqual('application/json');
+  });
+
   test('set status code', async () => {
     const response = createResponse();
     response.status = 201;
@@ -56,11 +61,49 @@ describe('lib - function "createResponse"', async () => {
     expect(response.message).toBe('message');
   });
 
+  test('get & set header as an object', async () => {
+    const response = createResponse();
+    response.header['Content-Type'] = 'application/json';
+    expect(response.header['Content-Type']).toEqual('application/json');
+  });
+
+  test('get & set headers as a headers instance', async () => {
+    const response = createResponse();
+    expect(response.headers).instanceOf(Headers);
+    response.headers.set('Content-Type', 'application/json');
+    expect(response.headers.get('Content-Type')).toEqual('application/json');
+    response.headers.set('Set-Cookie', 'gingerbread');
+    response.headers.append('Set-Cookie', 'macaron');
+    expect(response.headers.getSetCookie()).toEqual(['gingerbread', 'macaron']);
+  });
+
+  test('get headers object', async () => {
+    const response = createResponse();
+    response.headers.set('Content-Type', 'application/json');
+    expect(response.headersObject).toEqual({ 'content-type': 'application/json' });
+    // note: headers are case-insensitive, when converted to object, all keys are lowercased
+  });
+
   test('set headers', async () => {
     const response = createResponse();
     response.headers = { 'Content-Type': 'application/json' };
     expect(response.headers.get('Content-Type')).toEqual('application/json');
   });
+
+  test('get & set cookie as an Object', async () => {
+    const response = createResponse();
+    response.cookie.key = 'value';
+    response.cookie.append('key', 'value2');
+    console.log(response.cookies);
+    // expect(response.cookie.key).toEqual('value');
+  });
+
+  // test('get & set cookies as an instance', async () => {
+  //   const response = createResponse();
+  //   response.cookie.set('key', 'value', { maxAge: 60 * 60 });
+  //   expect(response.cookie.get('key')).toEqual('value');
+  //   expect(response.cookies.key).toEqual('value');
+  // });
 
   test('set type', async () => {
     const response = createResponse();
