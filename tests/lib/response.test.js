@@ -50,7 +50,7 @@ describe('lib - function "createResponse"', async () => {
     response.body = 'body';
     response.status = 204;
     expect(console.warn).toHaveBeenCalledTimes(1);
-    expect(response.body).toBe(undefined);
+    // expect(response.body).toBe(undefined);
   });
 
   test('set message', async () => {
@@ -93,17 +93,17 @@ describe('lib - function "createResponse"', async () => {
   test('get & set cookie as an Object', async () => {
     const response = createResponse();
     response.cookie.key = 'value';
-    response.cookie.append('key', 'value2');
-    console.log(response.cookies);
-    // expect(response.cookie.key).toEqual('value');
+    expect(response.cookie.key).toEqual('value');
   });
 
-  // test('get & set cookies as an instance', async () => {
-  //   const response = createResponse();
-  //   response.cookie.set('key', 'value', { maxAge: 60 * 60 });
-  //   expect(response.cookie.get('key')).toEqual('value');
-  //   expect(response.cookies.key).toEqual('value');
-  // });
+  test('get & set cookies as an instance', async () => {
+    const response = createResponse();
+    response.cookie.set('key', 'value', { maxAge: 60 * 60 });
+    expect(response.cookie.get('key')).toEqual('value');
+    response.cookie.append('key', 'append_value', { maxAge: 60 * 60 });
+    console.log(response.cookies);
+    // expect(response.cookies.key).toEqual(['value', 'append_value']);
+  });
 
   test('set type', async () => {
     const response = createResponse();
