@@ -59,6 +59,7 @@ describe('lib - function "createResponse"', async () => {
     expect(response.message).toBe('message');
     response.status = 201;
     expect(response.message).toBe('message');
+    expect(response().statusText).toBe('message');
   });
 
   test('get & set header as an object', async () => {
