@@ -134,7 +134,7 @@ class Route {
         return false;
       }
 
-      console.log(params);
+      // console.log(params);
 
       // if (params.length === 0) {
       //   return path === rPath;

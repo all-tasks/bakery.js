@@ -18,14 +18,24 @@ bakery.addSteps(
     console.info(`response "${this.request.method}:${this.request.path}"`);
   },
   async function welcome() {
-    this.logger.info('---- welcome ----');
-    this.response.body = 'Welcome to bakery.js!';
-    this.steps.after(async function afterWelcome() {
-      this.response.body += ' Hope you enjoy it';
-      await this.next();
-    });
-    await this.steps.next();
-    this.response.body += ' and have a wonderful day!';
+    try {
+      this.logger.info('---- welcome ----');
+      this.response.message = 'welcome';
+      this.response.body = 'Welcome to bakery.js!';
+      this.steps.after(async function afterWelcome() {
+        this.response.body += ' Hope you enjoy it';
+        await this.next();
+      });
+      await this.steps.next();
+      this.response.body += ' and have a wonderful day!';
+      // throw new Error('error');
+      return null;
+    } catch (error) {
+      // this.logger.error(error);
+      this.response.status = 200;
+      this.response.message = `welcome error ${error.message}`;
+      return null;
+    }
   },
   // async () => {
   //   if (willTriggerError) throw new Error('error');
@@ -35,8 +45,11 @@ bakery.addSteps(
 const host = `http://localhost:${port}`;
 
 await fetch(`${host}/api/users?role=admin`)
-  .then((res) => res.text()).then((res) => {
-    if (res)console.debug({ res });
+  .then((res) => {
+    console.debug(res);
+    return res.text();
+  }).then((res) => {
+    if (res) console.debug({ res });
   });
 
 // willTriggerError = false;
