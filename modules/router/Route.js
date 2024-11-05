@@ -11,7 +11,9 @@ class Route {
 
   #proxy = new Proxy(this, {
     get(target, property) {
-      return (property === 'proxy' || typeof target[property] === 'function') ? undefined : target[property];
+      return property === 'proxy' || typeof target[property] === 'function'
+        ? undefined
+        : target[property];
     },
     set() {
       throw new Error('route is immutable');
@@ -88,7 +90,8 @@ class Route {
         throw new TypeError('routePath must be a non-empty string');
       }
 
-      const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w-./:]*)$/)?.groups || {};
+      const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w-./:]*)$/)?.groups
+        || {};
 
       if (method === undefined || path === undefined) {
         throw new TypeError('invalid routePath');
@@ -96,7 +99,9 @@ class Route {
 
       const segments = path.match(/((?<=\/):?[\w-.]+(?![\w-.]*[:]))+/g) || [];
 
-      if (segments.length !== path.split('/').filter((segment) => segment).length) {
+      if (
+        segments.length !== path.split('/').filter((segment) => segment).length
+      ) {
         throw new TypeError('invalid routePath');
       }
 
@@ -114,42 +119,46 @@ class Route {
     }
   }
 
-  static matchRoutePath(routePath, method, path) {
-    try {
-      if (typeof routePath !== 'string' || !routePath) {
-        throw new TypeError('routePath must be a non-empty string');
-      }
+  // static matchRoutePath(routePath, method, path) {
+  //   try {
+  //     if (typeof routePath !== 'string' || !routePath) {
+  //       throw new TypeError('routePath must be a non-empty string');
+  //     }
 
-      if (typeof method !== 'string' || !method) {
-        throw new TypeError('method must be a non-empty string');
-      }
+  //     if (typeof method !== 'string' || !method) {
+  //       throw new TypeError('method must be a non-empty string');
+  //     }
 
-      if (typeof path !== 'string' || !path) {
-        throw new TypeError('path must be a non-empty string');
-      }
+  //     if (typeof path !== 'string' || !path) {
+  //       throw new TypeError('path must be a non-empty string');
+  //     }
 
-      const { method: routeMethod, path: rPath, params } = Route.parseRoutePath(routePath);
+  //     const {
+  //       method: routeMethod,
+  //       path: rPath,
+  //       params,
+  //     } = Route.parseRoutePath(routePath);
 
-      if (method !== routeMethod) {
-        return false;
-      }
+  //     if (method !== routeMethod) {
+  //       return false;
+  //     }
 
-      // console.log(params);
+  //     // console.log(params);
 
-      // if (params.length === 0) {
-      //   return path === rPath;
-      // }
+  //     // if (params.length === 0) {
+  //     //   return path === rPath;
+  //     // }
 
-      // const regex = new RegExp(`^${rPath.replace(/(:[\w-.]+)/g, '([\\w-.]+)')}$`);
+  //     // const regex = new RegExp(`^${rPath.replace(/(:[\w-.]+)/g, '([\\w-.]+)')}$`);
 
-      // console.log(regex);
+  //     // console.log(regex);
 
-      // return path.match(regex);
-    } catch (error) {
-      console.error();
-      throw error;
-    }
-  }
+  //     // return path.match(regex);
+  //   } catch (error) {
+  //     console.error();
+  //     throw error;
+  //   }
+  // }
 }
 
 export default Route;

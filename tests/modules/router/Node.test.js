@@ -70,15 +70,15 @@ describe('module "router" - class "Node"', async () => {
     expect(Object.keys(node.nodes).length).toBe(2);
     expect(node.nodes[':param'].params.length).toBe(2);
   });
-  test('method "margeNode"', async () => {
+  test('method "mergeNode"', async () => {
     const node = new Node('users');
     const other = new Node('users');
     other.addParams(':module');
     other.addSteps(() => {});
     other.addNode(':userId').addNode(':action');
     other.addRoute('GET', 'GET:/api/users');
-    expect(() => { node.margeNode(); }).toThrow();
-    expect(() => { node.margeNode(other); }).not.toThrow();
+    expect(() => { node.mergeNode(); }).toThrow();
+    expect(() => { node.mergeNode(other); }).not.toThrow();
     expect(node.params.length).toBe(1);
     expect(node.steps.length).toBe(1);
     expect(Object.values(node.nodes).length).toBe(1);

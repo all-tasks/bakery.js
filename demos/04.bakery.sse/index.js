@@ -52,6 +52,9 @@ bakery.addSteps(
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
     };
+    this.req.on('close', () => {
+      clients.delete(this);
+    });
     this.response.body = new ReadableStream({
       start(controller) {
         clients.add(controller);
@@ -74,6 +77,7 @@ bakery.addSteps(
         // };
       },
     });
+
     await this.steps.next();
   },
 );

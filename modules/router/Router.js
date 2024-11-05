@@ -19,9 +19,12 @@ class Router {
 
   #methodSteps;
 
+  #statusSteps;
+
   constructor({
     prefix = '',
     methodSteps = {},
+    statusSteps = {},
   } = {}) {
     validateArgument.all({ prefix, methodSteps });
 
@@ -36,6 +39,8 @@ class Router {
     });
 
     this.#methodSteps = methodSteps;
+
+    this.#statusSteps = {};
 
     const router = this;
 
@@ -89,6 +94,19 @@ class Router {
     return this;
   }
 
+  addStatusSteps(status, ...steps) {
+    if (steps.length === 0) {
+      console.warn('no steps to add');
+      return this;
+    }
+
+    validateArgument.all({ status, steps });
+
+    (this.#statusSteps[status] ||= []).push(...steps);
+
+    return this;
+  }
+
   route(routePath, ...steps) {
     validateArgument.steps(steps);
 
@@ -128,7 +146,7 @@ class Router {
       console.warn('merge will ignore argument router\'s "methodSteps"');
     }
 
-    this.routeTree.margeNode(router.routeTree);
+    this.routeTree.mergeNode(router.routeTree);
 
     return this;
   }

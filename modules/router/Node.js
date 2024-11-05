@@ -106,7 +106,7 @@ class Node {
     return this.#nodes[segment];
   }
 
-  margeNode(scion) {
+  mergeNode(scion) {
     if (!(scion instanceof Node)) {
       throw new TypeError('scion must be an instance of Node');
     }
@@ -119,7 +119,7 @@ class Node {
         if (this.nodes[segment] === undefined) {
           this.#nodes[segment] = node;
         } else {
-          this.nodes[segment].margeNode(node);
+          this.nodes[segment].mergeNode(node);
         }
       });
 
@@ -131,7 +131,7 @@ class Node {
         }
       });
     } catch (error) {
-      console.error(`margeNode error: ${error.message}`);
+      console.error(`mergeNode error: ${error.message}`);
       throw error;
     }
 

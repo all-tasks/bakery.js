@@ -5,7 +5,7 @@ export default defineConfig({
   },
   coverage: {
     exclude: [
-      'demos',
+      './demos',
     ],
   },
 });
