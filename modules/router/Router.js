@@ -21,11 +21,7 @@ class Router {
 
   #statusSteps;
 
-  constructor({
-    prefix = '',
-    methodSteps = {},
-    statusSteps = {},
-  } = {}) {
+  constructor({ prefix = '', methodSteps = {}, statusSteps = {} } = {}) {
     validateArgument.all({ prefix, methodSteps });
 
     this.#prefix = prefix;
@@ -34,13 +30,16 @@ class Router {
 
     this.#currentNode = this.#routeTree;
 
-    this.#prefix.split('/').filter((segment) => (segment)).forEach((segment) => {
-      this.#currentNode = this.#currentNode.addNode(segment);
-    });
+    this.#prefix
+      .split('/')
+      .filter((segment) => segment)
+      .forEach((segment) => {
+        this.#currentNode = this.#currentNode.addNode(segment);
+      });
 
     this.#methodSteps = methodSteps;
 
-    this.#statusSteps = {};
+    this.#statusSteps = statusSteps;
 
     const router = this;
 
@@ -52,7 +51,9 @@ class Router {
       },
       routeTree: {
         enumerable: true,
-        get() { return this.#routeTree; },
+        get() {
+          return this.#routeTree;
+        },
       },
       currentNode: {
         enumerable: true,
@@ -62,8 +63,27 @@ class Router {
       methodSteps: {
         enumerable: true,
         get() {
-          return Object.freeze(Object.fromEntries(Object.entries(this.#methodSteps)
-            .map(([key, value]) => ([key, Object.freeze([...value])]))));
+          return Object.freeze(
+            Object.fromEntries(
+              Object.entries(this.#methodSteps).map(([key, value]) => [
+                key,
+                Object.freeze([...value]),
+              ]),
+            ),
+          );
+        },
+      },
+      statusSteps: {
+        enumerable: true,
+        get() {
+          return Object.freeze(
+            Object.fromEntries(
+              Object.entries(this.#statusSteps).map(([key, value]) => [
+                key,
+                Object.freeze([...value]),
+              ]),
+            ),
+          );
         },
       },
       addRoute: {
@@ -95,6 +115,17 @@ class Router {
   }
 
   addStatusSteps(status, ...steps) {
+    try {
+      if (typeof status === 'string') {
+        status = parseInt(status, 10);
+      }
+      if (typeof status !== 'number' || status < 100 || status > 599) {
+        throw new Error();
+      }
+    } catch (error) {
+      throw new TypeError('argument status must be a number or a string of number between 100 and 599');
+    }
+
     if (steps.length === 0) {
       console.warn('no steps to add');
       return this;
@@ -112,7 +143,10 @@ class Router {
 
     const { method, segments } = Route.parseRoutePath(routePath);
 
-    const reinstatePath = `${method}:/${[this.#prefix, ...segments].join('/')}`.replace(/\/\//g, '/');
+    const reinstatePath = `${method}:/${[this.#prefix, ...segments].join('/')}`.replace(
+      /\/{2,}/g,
+      '/',
+    );
 
     let { currentNode } = this;
 
@@ -191,18 +225,28 @@ class Router {
       try {
         let currentNode = routeTree;
 
+        let wildcard;
+
         const { method, path } = this.request;
 
         const params = {};
 
         const steps = [...currentNode.steps];
 
-        const segments = path.split('/').filter((segment) => (segment));
+        const segments = path.split('/').filter((segment) => segment);
 
         for (const segment of segments) {
-          currentNode = currentNode.nodes[segment] || currentNode.nodes[':param'];
+          const { nodes } = currentNode;
 
-          if (currentNode === undefined) { break; }
+          if (nodes['*']) {
+            wildcard = nodes['*'];
+          }
+
+          currentNode = nodes[segment] || nodes[':param'] || nodes['*'];
+
+          if (currentNode === undefined) {
+            break;
+          }
 
           steps.push(...currentNode.steps);
 
@@ -214,18 +258,31 @@ class Router {
               params[param] = segment;
             });
           }
+
+          if (currentNode.segment === '*') {
+            params['*'] = segments.slice(segments.indexOf(segment)).join('/');
+            break;
+          }
         }
 
         if (currentNode === undefined || !Object.keys(currentNode.routes).length) {
-          this.response.status = 404;
-          return this.steps.next();
+          if (wildcard !== undefined) {
+            currentNode = wildcard;
+          } else {
+            this.response.status = 404;
+            return this.steps.next();
+          }
         }
 
-        const matchedRoute = currentNode.routes[method];
+        let matchedRoute = currentNode.routes[method];
 
         if (matchedRoute === undefined) {
-          this.response.status = 405;
-          return this.steps.next();
+          if (wildcard !== undefined && wildcard.routes[method] !== undefined) {
+            matchedRoute = wildcard.routes[method];
+          } else {
+            this.response.status = 405;
+            return this.steps.next();
+          }
         }
 
         this.response.status = 200;
@@ -234,11 +291,7 @@ class Router {
 
         this.request.params = Object.freeze({ ...params });
 
-        this.steps.after(
-          ...steps,
-          ...(methodSteps[method] || []),
-          ...matchedRoute.steps,
-        );
+        this.steps.after(...steps, ...(methodSteps[method] || []), ...matchedRoute.steps);
 
         return this.steps.next();
       } catch (error) {
@@ -271,16 +324,20 @@ class Router {
 
     routes = routes.sort((a, b) => {
       const result = a.path.replace(':', 'Ѐ').localeCompare(b.path.replace(':', 'Ѐ'));
-      return result !== 0 ? result : (() => {
-        const methods = ['DELETE', 'PATCH', 'PUT', 'GET', 'POST'];
-        return methods.findIndex((method) => (method === b.route.method))
-       - methods.findIndex((method) => (method === a.route.method));
-      })();
+      return result !== 0
+        ? result
+        : (() => {
+          const methods = ['DELETE', 'PATCH', 'PUT', 'GET', 'POST'];
+          return (
+            methods.findIndex((method) => method === b.route.method)
+              - methods.findIndex((method) => method === a.route.method)
+          );
+        })();
     });
 
     return format === 'array'
-      ? routes.map(({ route }) => (route))
-      : Object.fromEntries(routes.map(({ route }) => ([route.path, route])));
+      ? routes.map(({ route }) => route)
+      : Object.fromEntries(routes.map(({ route }) => [route.path, route]));
   }
 
   toString(replacer, space) {
@@ -292,7 +349,10 @@ const factoryMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 factoryMethods.forEach((method) => {
   // eslint-disable-next-line
-  Router.prototype[method] = Router.prototype[method.toLowerCase()] = function factoryMethod(path, ...steps) {
+  Router.prototype[method] = Router.prototype[method.toLowerCase()] = function factoryMethod(
+    path,
+    ...steps
+  ) {
     validateArgument.all({ path, steps });
     this.route(`${method}:${path}`, ...steps);
     return this;

@@ -38,6 +38,17 @@ router.addRoute('GET:/users/:id', async function getUser() {
   return this.steps.next();
 });
 
+router.addRoute('GET:/path/a', async function getPath() {
+  console.info(JSON.stringify({ router: 'GET:/path/a', path: this.request.path }));
+  return this.steps.next();
+});
+
+router.addRoute('GET:/path/*', async function getPath() {
+  console.info(JSON.stringify({ router: 'GET:/path/*', path: this.request.path }));
+  this.response.body = { router: 'GET:/path/*', path: this.request.path };
+  return this.steps.next();
+});
+
 bakery.addSteps(
   router.routing(),
 );
@@ -69,6 +80,14 @@ await fetch(`${host}/api/users`, { method: 'POST' })
   });
 
 await fetch(`${host}/api/accounts`)
+  .then((res) => {
+    console.debug(res);
+    return res.text();
+  }).then((res) => {
+    if (res)console.debug(`fetch: ${res}`);
+  });
+
+await fetch(`${host}/api/path/a/b`)
   .then((res) => {
     console.debug(res);
     return res.text();

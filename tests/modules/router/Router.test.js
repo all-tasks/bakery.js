@@ -38,6 +38,20 @@ describe('module "router" - class "Router"', async () => {
     expect(() => { router.addMethodSteps(true, true); }).toThrow();
     router.addMethodSteps('get', () => {});
     expect(router.methodSteps).toEqual({ GET: [expect.any(Function)] });
+    console.warn = vi.fn();
+    router.addMethodSteps('get');
+    expect(console.warn).toHaveBeenCalledWith('no steps to add');
+  });
+  test('method "addStatusSteps"', async () => {
+    const router = new Router({ prefix: '/api' });
+    expect(router.statusSteps).toEqual({});
+    expect(() => { router.addStatusSteps(true, true); }).toThrow();
+    expect(() => { router.addStatusSteps('1000', () => {}); }).toThrow();
+    router.addStatusSteps(200, () => {});
+    expect(router.statusSteps).toEqual({ 200: [expect.any(Function)] });
+    console.warn = vi.fn();
+    router.addStatusSteps(200);
+    expect(console.warn).toHaveBeenCalledWith('no steps to add');
   });
   test('method "route"', async () => {
     const router = new Router({ prefix: '/api' });
@@ -102,6 +116,55 @@ describe('module "router" - class "Router"', async () => {
     expect(context.response.status).toBe(200);
     expect(context.steps.after).toHaveBeenCalledWith(everyGet, getUsers);
     expect(context.steps.next).toHaveBeenCalledTimes(1);
+  });
+  test('method "routing" * path', async () => {
+    const router = new Router({ prefix: '/api' });
+    router.addRoute('GET:/path/*', () => {});
+    router.addRoute('PUT:/path/*', () => {});
+    router.addRoute('GET:/path/a/b', () => {});
+
+    const context = {
+      request: {
+        method: 'GET',
+        path: '/api/path/100/200',
+        params: [],
+      },
+      response: {
+        status: 400,
+      },
+      steps: {
+        after: vi.fn(),
+        next: vi.fn(),
+      },
+    };
+    router.routing().apply(context);
+    expect(context.route).toBeDefined();
+    expect(context.route.path).toBe('GET:/api/path/*');
+    expect(context.request.params).toEqual({ '*': '100/200' });
+
+    context.request.path = '/api/path/a/b';
+    router.routing().apply(context);
+    expect(context.route.path).toBe('GET:/api/path/a/b');
+
+    context.request.method = 'PUT';
+    router.routing().apply(context);
+    expect(context.route.path).toBe('PUT:/api/path/*');
+
+    router.addRoute('GET:/path/:a/:b', () => {});
+    router.addRoute('GET:/path/a/*', () => {});
+
+    context.request = {
+      method: 'GET',
+      path: '/api/path/100/200',
+      params: [],
+    };
+
+    router.routing().apply(context);
+    expect(context.route.path).toBe('GET:/api/path/:a/:b');
+
+    context.request.path = '/api/path/a/100';
+    router.routing().apply(context);
+    expect(context.route.path).toBe('GET:/api/path/a/*');
   });
   test('method "getAllRoutes"', async () => {
     const router = new Router({ prefix: '/api' });

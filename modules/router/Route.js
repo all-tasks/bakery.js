@@ -90,14 +90,14 @@ class Route {
         throw new TypeError('routePath must be a non-empty string');
       }
 
-      const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w-./:]*)$/)?.groups
+      const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w*-./:]*)$/)?.groups
         || {};
 
       if (method === undefined || path === undefined) {
         throw new TypeError('invalid routePath');
       }
 
-      const segments = path.match(/((?<=\/):?[\w-.]+(?![\w-.]*[:]))+/g) || [];
+      const segments = path.match(/((?<=\/):?[\w*-.]+(?![\w*-.]*[:]))+/g) || [];
 
       if (
         segments.length !== path.split('/').filter((segment) => segment).length

@@ -8,21 +8,26 @@ const validateArgument = {
       throw new TypeError('method must be an uppercase string, like "GET" or "POST"');
     }
     if (!validMethods.includes(value)) {
-      console.warn(`method ${value} is not a valid HTTP method`);
+      console.warn(`method "${value}" is not a valid HTTP method`);
+    }
+  },
+  status(value) {
+    if (typeof value !== 'number' || value < 100 || value > 599) {
+      throw new TypeError('status must be a number between 100 and 599');
     }
   },
   // path(value) {
-  //   if (typeof value !== 'string' || !value.match(/^[\w-./:]*$/)) {
+  //   if (typeof value !== 'string' || !value.match(/^[\w*-./:]*$/)) {
   //     throw new TypeError('path must be a string, like "/api/resources/:id"');
   //   }
   // },
   routePath(value) {
-    if (typeof value !== 'string' || !value.match(/^[A-Z-]+:\/[\w-./:]*$/)) {
+    if (typeof value !== 'string' || !value.match(/^[A-Z-]+:\/[\w*-./:]*$/)) {
       throw new TypeError('routePath must be a string, like "GET:/api/resources/:id"');
     }
   },
   segment(value) {
-    if (typeof value !== 'string' || !value.match(/^:?[\w-.]+$/)) {
+    if (typeof value !== 'string' || !value.match(/^(?:\*|:?[\w-.]+)$/)) {
       throw new TypeError('segment must be a string, like "resources" or ":id"');
     }
   },
