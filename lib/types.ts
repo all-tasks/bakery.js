@@ -3,6 +3,8 @@ import { URL, URLSearchParams } from 'url';
 import { Req } from './request';
 import { Res } from './response';
 
+export type { Req, Res };
+
 export type BodyType = 'arrayBuffer' | 'blob' | 'formData' | 'json' | 'text';
 
 export interface Cookies {

@@ -12,11 +12,11 @@
   "type": "module",
   "main": "index.js",
   "imports": {
-    "#bakery": "./index.js",
+    "#bakery": "./index.ts",
     "#lib": "./lib/index.ts",
     "#lib/*": "./lib/*.ts",
-    "#modules": "./modules/index.js",
-    "#modules/*": "./modules/*/index.js",
+    "#modules": "./modules/index.ts",
+    "#modules/*": "./modules/*/index.ts",
     "#utils": "./utils/index.js",
     "#utils/*": "./utils/*.js"
   },

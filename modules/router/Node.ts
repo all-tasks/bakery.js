@@ -4,18 +4,20 @@ import validateArgument from './validateArgument.js';
 
 import Route from './Route.js';
 
+import { type Step } from '#lib/types';
+
 class Node {
   #segment;
 
   #params;
 
-  #steps = [];
+  #steps: Step[] = [];
 
   #nodes = {};
 
   #routes = {};
 
-  constructor(segment, ...steps) {
+  constructor(segment: string, ...steps: Step[]) {
     validateArgument.all({ segment, steps });
 
     const param = segment.match(/^:([\w-.]+)$/)?.[1];
@@ -50,6 +52,12 @@ class Node {
       },
     });
   }
+
+  readonly segment: string;
+  readonly params: string[];
+  readonly steps: Step[];
+  readonly nodes: Record<string, Node>;
+  readonly routes: Record<string, Route>;
 
   addParams(...params) {
     if (params.length === 0) {
@@ -127,7 +135,9 @@ class Node {
         if (this.routes[method] === undefined) {
           this.#routes[method] = route;
         } else {
-          console.warn(`method [${method}] already exists in node [${this.segment}], merging method will be ignored`);
+          console.warn(
+            `method [${method}] already exists in node [${this.segment}], merging method will be ignored`,
+          );
         }
       });
     } catch (error) {

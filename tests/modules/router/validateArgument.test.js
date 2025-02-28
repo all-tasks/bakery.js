@@ -2,7 +2,7 @@ import {
   describe, test, expect, vi,
 } from 'vitest';
 
-import validateArgument from '../../../modules/router/validateArgument.js';
+import validateArgument from '../../../modules/router/validateArgument.ts';
 
 describe('module "router" - function "validateArgument"', async () => {
   test('validate "method"', async () => {

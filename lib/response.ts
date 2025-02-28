@@ -74,13 +74,18 @@ function checkBodyType(value) {
         : value instanceof URLSearchParams
           ? 'application/x-www-form-urlencoded'
           : value instanceof Blob
-            ? value.type
-            : undefined
-    : typeof value === 'string' && /<!DOCTYPE HTML/i.test(value)
+            ? value.type || 'application/octet-stream'
+            : value instanceof ArrayBuffer ||
+                (typeof Buffer !== 'undefined' && Buffer.isBuffer(value))
+              ? 'application/octet-stream'
+              : undefined
+    : typeof value === 'string' && /<html|<!DOCTYPE HTML/i.test(value)
       ? 'text/html'
-      : ['boolean', 'number', 'string'].includes(typeof value)
-        ? 'text/plain'
-        : undefined;
+      : /^\s*<\?xml/.test(value)
+        ? 'application/xml'
+        : ['boolean', 'number', 'string'].includes(typeof value)
+          ? 'text/plain'
+          : undefined;
 }
 
 function getCookiesValue(cookies, key) {
@@ -120,7 +125,6 @@ function createResponse({
 
   return new Proxy(() => {}, {
     get(target: any, property) {
-      // TODO: fix any
       property = aliases[property] || property;
 
       switch (property) {
@@ -243,7 +247,8 @@ function createResponse({
 
           target.status ||= 200;
           target.message ||= statuses(200);
-          (target.headers ||= headers).set('Content-Type', type);
+
+          target.headers || (target.headers ??= headers).set('Content-Type', type);
 
           if (type === 'application/json') {
             target.originalBody = value;
@@ -262,7 +267,6 @@ function createResponse({
     },
 
     apply(target: any): Response {
-      // TODO: fix any
       return new Response(target.body, {
         status: target.status || status,
         statusText: target.message || message,

@@ -10,6 +10,8 @@ import validateArgument from './validateArgument.js';
 import Node from './Node.js';
 import Route from './Route.js';
 
+import { type Step } from '#lib/types';
+
 class Router {
   #prefix;
 
@@ -17,9 +19,9 @@ class Router {
 
   #currentNode;
 
-  #methodSteps;
+  #methodSteps: Record<string, Step[]> = {};
 
-  #statusSteps;
+  #statusSteps: Record<number, Step[]> = {};
 
   constructor({ prefix = '', methodSteps = {}, statusSteps = {} } = {}) {
     validateArgument.all({ prefix, methodSteps });
@@ -67,7 +69,7 @@ class Router {
             Object.fromEntries(
               Object.entries(this.#methodSteps).map(([key, value]) => [
                 key,
-                Object.freeze([...value]),
+                Object.freeze([...(value as Step[])]),
               ]),
             ),
           );
@@ -80,7 +82,7 @@ class Router {
             Object.fromEntries(
               Object.entries(this.#statusSteps).map(([key, value]) => [
                 key,
-                Object.freeze([...value]),
+                Object.freeze([...(value as Step[])]),
               ]),
             ),
           );
@@ -93,13 +95,19 @@ class Router {
     });
   }
 
-  addGlobalSteps(...steps) {
+  readonly prefix: string;
+  readonly currentNode: Node;
+  readonly routeTree: Node;
+  readonly methodSteps: Record<string, ReadonlyArray<Step>>;
+  readonly statusSteps: Record<number, ReadonlyArray<Step>>;
+
+  addGlobalSteps(...steps: Step[]): Router {
     this.#routeTree.addSteps(...steps);
 
     return this;
   }
 
-  addMethodSteps(method, ...steps) {
+  addMethodSteps(method: string, ...steps: Step[]): Router {
     if (steps.length === 0) {
       console.warn('no steps to add');
       return this;
@@ -114,7 +122,7 @@ class Router {
     return this;
   }
 
-  addStatusSteps(status, ...steps) {
+  addStatusSteps(status: number, ...steps: Step[]): Router {
     try {
       if (typeof status === 'string') {
         status = parseInt(status, 10);
@@ -123,7 +131,9 @@ class Router {
         throw new Error();
       }
     } catch (error) {
-      throw new TypeError('argument status must be a number or a string of number between 100 and 599');
+      throw new TypeError(
+        'argument status must be a number or a string of number between 100 and 599',
+      );
     }
 
     if (steps.length === 0) {
@@ -138,7 +148,7 @@ class Router {
     return this;
   }
 
-  route(routePath, ...steps) {
+  route(routePath: string, ...steps: Step[]): Route {
     validateArgument.steps(steps);
 
     const { method, segments } = Route.parseRoutePath(routePath);
@@ -159,7 +169,7 @@ class Router {
     return route;
   }
 
-  batch(routes) {
+  batch(routes: Array<[routePath: string, ...steps: Step[]]>): Router {
     if (!Array.isArray(routes) || routes.some((route) => !Array.isArray(route))) {
       throw new TypeError('argument routes must be an array of arrays (route arguments)');
     }
@@ -171,7 +181,7 @@ class Router {
     return this;
   }
 
-  merge(router) {
+  merge(router: Router): Router {
     if (!(router instanceof Router)) {
       throw new TypeError('argument router must be an instance of Router');
     }
@@ -185,7 +195,7 @@ class Router {
     return this;
   }
 
-  async globMerge(globPath) {
+  async globMerge(globPath: string): Promise<Router> {
     if (typeof globPath !== 'string' || !globPath) {
       throw new TypeError('argument globPath must be a non-empty string');
     }
@@ -193,22 +203,24 @@ class Router {
       const files = await glob(globPath);
 
       await Promise.all(
-        files.map((file) => import(Path.resolve(file))
-          .then((module) => {
-            const router = module?.default || module.router;
+        files.map((file) =>
+          import(Path.resolve(file))
+            .then((module) => {
+              const router = module?.default || module.router;
 
-            if (router instanceof Router) {
-              this.merge(router);
+              if (router instanceof Router) {
+                this.merge(router);
+                return null;
+              }
+
+              console.warn(`merge ${file} error: should export a instance of Router`);
               return null;
-            }
-
-            console.warn(`merge ${file} error: should export a instance of Router`);
-            return null;
-          })
-          .catch((error) => {
-            console.warn(`merge ${file} error: ${error}`);
-            return null;
-          })),
+            })
+            .catch((error) => {
+              console.warn(`merge ${file} error: ${error}`);
+              return null;
+            }),
+        ),
       );
 
       return this;
@@ -274,7 +286,7 @@ class Router {
           }
         }
 
-        let matchedRoute = currentNode.routes[method];
+        let matchedRoute: Route = currentNode.routes[method];
 
         if (matchedRoute === undefined) {
           if (wildcard !== undefined && wildcard.routes[method] !== undefined) {
@@ -301,7 +313,7 @@ class Router {
     };
   }
 
-  getAllRoutes(format = 'array') {
+  getAllRoutes(format: 'array' | 'object' = 'array'): Route[] | Record<string, Route> {
     if (format !== 'array' && format !== 'object') {
       throw new TypeError('argument format must be "array" or "object"');
     }
@@ -327,12 +339,12 @@ class Router {
       return result !== 0
         ? result
         : (() => {
-          const methods = ['DELETE', 'PATCH', 'PUT', 'GET', 'POST'];
-          return (
-            methods.findIndex((method) => method === b.route.method)
-              - methods.findIndex((method) => method === a.route.method)
-          );
-        })();
+            const methods = ['DELETE', 'PATCH', 'PUT', 'GET', 'POST'];
+            return (
+              methods.findIndex((method) => method === b.route.method) -
+              methods.findIndex((method) => method === a.route.method)
+            );
+          })();
     });
 
     return format === 'array'

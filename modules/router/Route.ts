@@ -2,12 +2,14 @@
 
 import validateArgument from './validateArgument.js';
 
+import { type Step } from '#lib/types';
+
 class Route {
   #method;
 
   #path;
 
-  #steps = [];
+  #steps: Step[] = [];
 
   #proxy = new Proxy(this, {
     get(target, property) {
@@ -57,6 +59,12 @@ class Route {
     });
   }
 
+  readonly method: string;
+  readonly path: string;
+  readonly steps: Step[];
+  readonly proxy: Route;
+  readonly meta: Record<string, unknown>;
+
   addSteps(...steps) {
     if (steps.length === 0) {
       console.warn('no steps to add');
@@ -90,8 +98,8 @@ class Route {
         throw new TypeError('routePath must be a non-empty string');
       }
 
-      const { method, path } = routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w*-./:]*)$/)?.groups
-        || {};
+      const { method, path } =
+        routePath.match(/^(?<method>[A-Z-]+):(?<path>\/[\w*-./:]*)$/)?.groups || {};
 
       if (method === undefined || path === undefined) {
         throw new TypeError('invalid routePath');
@@ -99,9 +107,7 @@ class Route {
 
       const segments = path.match(/((?<=\/):?[\w*-.]+(?![\w*-.]*[:]))+/g) || [];
 
-      if (
-        segments.length !== path.split('/').filter((segment) => segment).length
-      ) {
+      if (segments.length !== path.split('/').filter((segment) => segment).length) {
         throw new TypeError('invalid routePath');
       }
 
