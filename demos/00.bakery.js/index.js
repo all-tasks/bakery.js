@@ -22,7 +22,7 @@ bakery.addSteps(
       this.logger.info('---- welcome ----');
       this.response.message = 'welcome';
       this.response.body = 'Welcome to bakery.js!';
-      this.steps.after(async function afterWelcome() {
+      this.steps.insert(async function afterWelcome() {
         this.response.body += ' Hope you enjoy it';
         await this.next();
       });

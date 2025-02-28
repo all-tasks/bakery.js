@@ -1,6 +1,4 @@
-import {
-  describe, test,
-} from 'vitest';
+import { describe, test } from 'vitest';
 
 import createContext from '#lib/context';
 

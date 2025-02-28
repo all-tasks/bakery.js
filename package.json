@@ -1,16 +1,20 @@
 {
-  "name": "bakery.js",
+  "name": "@all-tasks/bakery.js",
   "version": "0.0.1",
-  "description": "A RESTful API framework based on Bun",
-  "repository": "https://github.com/lanezhao/bakery.js",
+  "description": "A RESTful API framework based on Bun.js",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:all-tasks/bakery.js.git"
+  },
   "license": "BSD-3-Clause",
   "author": "Lane <lane@wiseinfo.cc>",
   "type": "module",
   "main": "index.js",
   "imports": {
     "#bakery": "./index.js",
-    "#lib": "./lib/index.js",
-    "#lib/*": "./lib/*.js",
+    "#lib": "./lib/index.ts",
+    "#lib/*": "./lib/*.ts",
     "#modules": "./modules/index.js",
     "#modules/*": "./modules/*/index.js",
     "#utils": "./utils/index.js",

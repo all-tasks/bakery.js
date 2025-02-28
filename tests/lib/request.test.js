@@ -65,7 +65,9 @@ describe('lib - function "createRequest"', async () => {
   });
 
   test('set property', async () => {
-    expect(() => { request.method = 'POST'; }).toThrow();
+    expect(() => {
+      request.method = 'POST';
+    }).toThrow();
   });
 
   test('get body will call reader only once and use cache after', async () => {

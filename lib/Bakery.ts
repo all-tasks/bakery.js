@@ -1,26 +1,28 @@
 #!/usr/bin/env bun
 
-import { serve } from 'bun';
+import { serve, type ServeOptions } from 'bun';
 
 import { createContext } from './context.js';
 
 import { runSteps } from './steps.js';
 
+import type { Step } from './types.js';
+
 class Bakery extends EventTarget {
-  #serve;
+  #serve: ReturnType<typeof serve>;
 
-  #steps = [];
+  #steps: Step[] = [];
 
-  constructor(options = {}) {
+  constructor(options: Partial<ServeOptions> = {}) {
     super();
 
     const bakery = this;
 
     this.#serve = serve({
       ...options,
-      async fetch(req) {
+      async fetch(req: Request): Promise<Response> {
         try {
-          const context = createContext({ req });
+          const context = createContext(req);
           await runSteps([...bakery.#steps], context);
           return context.response();
         } catch (error) {
@@ -35,7 +37,7 @@ class Bakery extends EventTarget {
     this.add = this.addSteps.bind(this);
   }
 
-  addSteps(...steps) {
+  addSteps(...steps: Step[]) {
     if (steps.length === 0) {
       console.warn('no steps to add');
       return this;
@@ -49,6 +51,8 @@ class Bakery extends EventTarget {
 
     return this;
   }
+
+  add: typeof this.addSteps;
 }
 
 export default Bakery;

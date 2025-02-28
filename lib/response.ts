@@ -1,10 +1,34 @@
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-return-assign */
-
 import statuses from 'statuses';
 
 import cookie from 'cookie';
+
+interface ResCookie {
+  set: (key: string, value: string, options) => void;
+  append: (key: string, value: string, options) => void;
+  [key: string]: any;
+}
+
+export interface ResProps {
+  // status related
+  status: number;
+  message: string;
+  statusText: string; // alias for message
+
+  // headers related
+  headers: Headers;
+  headersObject: Record<string, string>;
+  type: string;
+
+  // cookie related
+  cookie: ResCookie;
+  cookies: string[];
+
+  // body related
+  body: any;
+  bodyString: string;
+}
+
+export type Res = (() => Response) & ResProps;
 
 const aliases = {
   statusText: 'message',
@@ -22,8 +46,10 @@ const validateArgument = {
     }
   },
   headers(value) {
-    if (typeof value !== 'object'
-    || Object.values(value).some((v) => !['number', 'string'].includes(typeof v))) {
+    if (
+      typeof value !== 'object' ||
+      Object.values(value).some((v) => !['number', 'string'].includes(typeof v))
+    ) {
       throw new Error('invalid headers');
     }
   },
@@ -33,39 +59,57 @@ const validateArgument = {
     }
   },
   all(value) {
-    Object.entries(value).forEach(([key, val]) => (this[key] ? this[key](val) : console.warn(`${key} validator not found`)));
+    Object.entries(value).forEach(([key, val]) =>
+      this[key] ? this[key](val) : console.warn(`${key} validator not found`),
+    );
   },
 };
 
 function checkBodyType(value) {
-  return typeof value === 'object' ? (
-    ['[object Array]', '[object Object]'].includes(Object.prototype.toString.call(value)) ? 'application/json'
-      : value instanceof FormData ? 'multipart/form-data'
-        : value instanceof URLSearchParams ? 'application/x-www-form-urlencoded'
-          : value instanceof Blob ? value.type : undefined
-  ) : (
-    typeof value === 'string' && /<!DOCTYPE HTML/i.test(value) ? 'text/html'
-      : ['boolean', 'number', 'string'].includes(typeof value) ? 'text/plain'
-        : undefined
-  );
+  return typeof value === 'object'
+    ? ['[object Array]', '[object Object]'].includes(Object.prototype.toString.call(value))
+      ? 'application/json'
+      : value instanceof FormData
+        ? 'multipart/form-data'
+        : value instanceof URLSearchParams
+          ? 'application/x-www-form-urlencoded'
+          : value instanceof Blob
+            ? value.type
+            : undefined
+    : typeof value === 'string' && /<!DOCTYPE HTML/i.test(value)
+      ? 'text/html'
+      : ['boolean', 'number', 'string'].includes(typeof value)
+        ? 'text/plain'
+        : undefined;
 }
 
 function getCookiesValue(cookies, key) {
-  const cookieValue = cookies.map((c) => (c.split(';')[0].split('='))).filter((c) => c[0] === key);
-  return cookieValue.length === 0 ? undefined
-    : cookieValue.length === 1 ? cookieValue[0][1]
+  const cookieValue = cookies.map((c) => c.split(';')[0].split('=')).filter((c) => c[0] === key);
+  return cookieValue.length === 0
+    ? undefined
+    : cookieValue.length === 1
+      ? cookieValue[0][1]
       : cookieValue.map((c) => c[1]);
 }
 
 function createResponse({
   status = 400,
-  message = statuses(400),
+  message = `${statuses(400)}`,
   headers = {},
   type,
   body,
-} = {}) {
+}: {
+  status?: number;
+  message?: string;
+  headers?: Headers | Record<string, string>;
+  type?: string;
+  body?: any;
+} = {}): Res {
   validateArgument.all({
-    status, message, headers, type,
+    status,
+    message,
+    headers,
+    type,
   });
 
   headers = headers instanceof Headers ? headers : new Headers(headers);
@@ -75,29 +119,33 @@ function createResponse({
   }
 
   return new Proxy(() => {}, {
-    get(target, property) {
+    get(target: any, property) {
+      // TODO: fix any
       property = aliases[property] || property;
 
       switch (property) {
         case 'status': {
-          return target.status ||= status;
+          return (target.status ||= status);
         }
         case 'message': {
-          return target.message ||= message;
+          return (target.message ||= message);
         }
         case 'header': {
-          return new Proxy({}, {
-            get(_, key) {
-              return (target.headers ||= headers).get(key);
+          return new Proxy(
+            {},
+            {
+              get(_, key) {
+                return (target.headers ||= headers).get(key);
+              },
+              set(_, key, value) {
+                (target.headers ||= headers).set(key, value);
+                return true;
+              },
             },
-            set(_, key, value) {
-              (target.headers ||= headers).set(key, value);
-              return true;
-            },
-          });
+          );
         }
         case 'headers': {
-          return target.headers ||= headers;
+          return (target.headers ||= headers);
         }
         case 'headersObject': {
           return Object.fromEntries((target.headers ||= headers));
@@ -106,34 +154,37 @@ function createResponse({
           return (target.headers ||= headers).get('Content-Type');
         }
         case 'cookie': {
-          return new Proxy({}, {
-            get(_, key) {
-              const cookies = (target.headers ||= headers).getSetCookie();
+          return new Proxy(
+            {},
+            {
+              get(_, key) {
+                const cookies = (target.headers ||= headers).getSetCookie();
 
-              switch (key) {
-                case 'get': {
-                  return (k) => getCookiesValue(cookies, k);
+                switch (key) {
+                  case 'get': {
+                    return (k) => getCookiesValue(cookies, k);
+                  }
+                  case 'set': {
+                    return (k, v, o) => {
+                      (target.headers ||= headers).set('Set-Cookie', cookie.serialize(k, v, o));
+                    };
+                  }
+                  case 'append': {
+                    return (k, v, o) => {
+                      (target.headers ||= headers).append('Set-Cookie', cookie.serialize(k, v, o));
+                    };
+                  }
+                  default: {
+                    return getCookiesValue(cookies, key);
+                  }
                 }
-                case 'set': {
-                  return (k, v, o) => {
-                    (target.headers ||= headers).set('Set-Cookie', cookie.serialize(k, v, o));
-                  };
-                }
-                case 'append': {
-                  return (k, v, o) => {
-                    (target.headers ||= headers).append('Set-Cookie', cookie.serialize(k, v, o));
-                  };
-                }
-                default: {
-                  return getCookiesValue(cookies, key);
-                }
-              }
+              },
+              set(_, key: string, value) {
+                (target.headers ||= headers).append('Set-Cookie', cookie.serialize(key, value));
+                return true;
+              },
             },
-            set(_, key, value) {
-              (target.headers ||= headers).append('Set-Cookie', cookie.serialize(key, value));
-              return true;
-            },
-          });
+          );
         }
         case 'cookies': {
           return (target.headers ||= headers).getSetCookie();
@@ -210,21 +261,17 @@ function createResponse({
       return value;
     },
 
-    apply(target) {
-      return new Response(
-        target.body,
-        {
-          status: target.status || status,
-          statusText: target.message || message,
-          headers: target.headers || headers,
-        },
-      );
+    apply(target: any): Response {
+      // TODO: fix any
+      return new Response(target.body, {
+        status: target.status || status,
+        statusText: target.message || message,
+        headers: target.headers || headers,
+      });
     },
-  });
+  }) as Res;
 }
 
 export default createResponse;
 
-export {
-  createResponse,
-};
+export { createResponse };
