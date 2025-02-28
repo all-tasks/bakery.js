@@ -12,7 +12,7 @@ const bakery = new Bakery({
 
 const indexHtml = await (await file(`${import.meta.dir}/index.html`))?.text();
 
-const clients = new Set();
+const clients = new Map();
 
 bakery.addSteps(
   async function logger() {
@@ -33,10 +33,11 @@ bakery.addSteps(
         return;
       }
       case 'POST:/message': {
+        const { session } = this.request.cookie;
         const message = await this.request.body();
 
-        [...clients].forEach((receiver) => {
-          receiver.enqueue(`data: ${JSON.stringify({ time: new Date().getTime(), message })}\n\n`);
+        clients.forEach((receiver) => {
+          receiver.enqueue(`data: ${JSON.stringify({ time: new Date().getTime(), message, session })}\n\n`);
         });
         this.response.status = 204;
         return;
@@ -47,34 +48,42 @@ bakery.addSteps(
     }
   },
   async function sse() {
+    this.session = {
+      id: Date.now(),
+    };
+
     this.response.headers = {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
     };
-    this.req.on('close', () => {
-      clients.delete(this);
-    });
+
+    this.response.cookie.set('session', this.session.id);
+
+    let interval;
+
     this.response.body = new ReadableStream({
-      start(controller) {
-        clients.add(controller);
+      start: (controller) => {
+        clients.set(this.session.id, controller);
 
         controller.enqueue(`data: ${JSON.stringify({
           time: new Date().getTime(),
           message: 'Welcome to bakery.js!',
         })}\n\n`);
 
-        // const sendEvent = (data) => {
-        //   controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
-        // };
+        const sendEvent = (data) => {
+          controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+        };
 
-        // const intervalId = setInterval(() => {
-        //   sendEvent({ time: new Date().getTime() });
-        // }, 1000);
-
-        // return () => {
-        //   clearInterval(intervalId);
-        // };
+        interval = setInterval(() => {
+          sendEvent({ time: new Date().getTime() });
+        }, 1000);
+      },
+      cancel: () => {
+        clients.delete(this.session.id);
+        if (interval) {
+          clearInterval(interval);
+        }
       },
     });
 

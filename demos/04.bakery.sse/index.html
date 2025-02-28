@@ -9,6 +9,7 @@
     *::before,
     *::after {
       box-sizing: border-box;
+      font-family: inherit;
     }
     body {
       min-width: 320px;
@@ -16,7 +17,7 @@
       padding: 0;
       background: #F4F4F4;
       margin: 0 auto;
-      font: 16px/1.5 sans-serif;
+      font: 16px/1.5 "SF Pro", sans-serif;
       font-weight: 100;
     }
     header {
@@ -82,7 +83,7 @@ const eventSource = new EventSource('http://localhost:6004/sse');
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.debug('new message received:', data);
-  renderMessage(data.message);
+  if(data.message) renderMessage(data.message);
 };
 
 document.getElementById('message-form').addEventListener('submit', (event) => {

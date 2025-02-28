@@ -1,8 +1,8 @@
-import { Bun } from 'bun';
+import { serve } from 'bun';
 
 const port = 4444;
 
-Bun.serve({
+serve({
   port,
   fetch() {
     return new Response('', {
