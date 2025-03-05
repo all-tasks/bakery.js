@@ -1,7 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable no-underscore-dangle */
-
 import glob from 'fast-glob';
 import Path from 'node:path';
 
@@ -39,11 +35,15 @@ class Router {
         this.#currentNode = this.#currentNode.addNode(segment);
       });
 
-    this.#methodSteps = methodSteps;
+    this.#methodSteps = structuredClone(methodSteps);
 
-    this.#statusSteps = statusSteps;
+    this.#statusSteps = structuredClone(statusSteps);
 
-    const router = this;
+    this.#defineProperties();
+  }
+
+  #defineProperties() {
+    const getterCache = new WeakMap();
 
     Object.defineProperties(this, {
       prefix: {
@@ -65,7 +65,11 @@ class Router {
       methodSteps: {
         enumerable: true,
         get() {
-          return Object.freeze(
+          if (getterCache.has(this.#methodSteps)) {
+            return getterCache.get(this.#methodSteps);
+          }
+
+          const result = Object.freeze(
             Object.fromEntries(
               Object.entries(this.#methodSteps).map(([key, value]) => [
                 key,
@@ -73,12 +77,19 @@ class Router {
               ]),
             ),
           );
+
+          getterCache.set(this.#methodSteps, result);
+          return result;
         },
       },
       statusSteps: {
         enumerable: true,
         get() {
-          return Object.freeze(
+          if (getterCache.has(this.#statusSteps)) {
+            return getterCache.get(this.#statusSteps);
+          }
+
+          const result = Object.freeze(
             Object.fromEntries(
               Object.entries(this.#statusSteps).map(([key, value]) => [
                 key,
@@ -86,11 +97,14 @@ class Router {
               ]),
             ),
           );
+
+          getterCache.set(this.#statusSteps, result);
+          return result;
         },
       },
       addRoute: {
         writable: false,
-        value: this.route.bind(router),
+        value: this.route.bind(this),
       },
     });
   }
@@ -235,75 +249,90 @@ class Router {
 
     return async function routing() {
       try {
-        let currentNode = routeTree;
-
-        let wildcard;
-
         const { method, path } = this.request;
 
-        const params = {};
+        const segments = path.split('/').filter(Boolean);
 
-        const steps = [...currentNode.steps];
+        const stack = [{ index: -1, node: routeTree, steps: routeTree.steps, params: {} }];
 
-        const segments = path.split('/').filter((segment) => segment);
+        let matchedNode, matchedRoute, matchedSteps, matchedParams;
 
-        for (const segment of segments) {
-          const { nodes } = currentNode;
+        while (stack.length) {
+          const current = stack.pop();
+          if (current?.node === undefined) continue;
+          const { index, node, steps, params } = current;
 
-          if (nodes['*']) {
-            wildcard = nodes['*'];
-          }
+          let newIndex = index + 1;
 
-          currentNode = nodes[segment] || nodes[':param'] || nodes['*'];
+          if (newIndex === segments.length) {
+            matchedNode = node;
+            matchedRoute = node.routes[method] || node.routes['ALL'];
+            if (matchedRoute) {
+              matchedSteps = steps.concat(methodSteps[method] || [], matchedRoute.steps);
+              matchedParams = params;
+              break;
+            }
+          } else {
+            const wildcardNode = node.nodes['*']; // Wildcard Match
+            const paramNode = node.nodes[':param']; // Parameter Match
+            const segmentNode = node.nodes[segments[newIndex]]; // Exact Match
 
-          if (currentNode === undefined) {
-            break;
-          }
+            // Priority : Exact Match > Parameter Match > Wildcard Match
+            // lower priority first push to stack
 
-          steps.push(...currentNode.steps);
-
-          if (currentNode.params) {
-            currentNode.params.forEach((param) => {
-              if (params[param] !== undefined) {
-                console.warn(`param ${param} already exists, will be overwritten`);
-              }
-              params[param] = segment;
-            });
-          }
-
-          if (currentNode.segment === '*') {
-            params['*'] = segments.slice(segments.indexOf(segment)).join('/');
-            break;
+            if (wildcardNode) {
+              const wildcardParams = Object.assign({}, params);
+              wildcardParams['*'] = segments.slice(newIndex).join('/');
+              stack.push({
+                index: segments.length - 1,
+                node: wildcardNode,
+                steps: steps.concat(wildcardNode.steps),
+                params: wildcardParams,
+              });
+            }
+            if (paramNode) {
+              const newParams = Object.assign({}, params);
+              paramNode.params.forEach((param) => {
+                if (newParams[param] !== undefined) {
+                  console.warn(`param ${param} already exists, will be overwritten`);
+                }
+                newParams[param] = segments[newIndex];
+              });
+              stack.push({
+                index: newIndex,
+                node: paramNode,
+                steps: steps.concat(paramNode.steps),
+                params: newParams,
+              });
+            }
+            if (segmentNode) {
+              stack.push({
+                index: newIndex,
+                node: segmentNode,
+                steps: steps.concat(segmentNode.steps),
+                params,
+              });
+            }
           }
         }
 
-        if (currentNode === undefined || !Object.keys(currentNode.routes).length) {
-          if (wildcard !== undefined) {
-            currentNode = wildcard;
-          } else {
-            this.response.status = 404;
-            return this.steps.next();
-          }
+        if (!matchedNode) {
+          this.response.status = 404;
+          return this.steps.next();
         }
 
-        let matchedRoute: Route = currentNode.routes[method];
-
-        if (matchedRoute === undefined) {
-          if (wildcard !== undefined && wildcard.routes[method] !== undefined) {
-            matchedRoute = wildcard.routes[method];
-          } else {
-            this.response.status = 405;
-            return this.steps.next();
-          }
+        if (!matchedRoute) {
+          this.response.status = 405;
+          return this.steps.next();
         }
 
         this.response.status = 200;
 
         this.route = matchedRoute.proxy;
 
-        this.request.params = Object.freeze({ ...params });
+        this.request.params = Object.freeze(matchedParams);
 
-        this.steps.after(...steps, ...(methodSteps[method] || []), ...matchedRoute.steps);
+        this.steps.after(...matchedSteps);
 
         return this.steps.next();
       } catch (error) {
@@ -318,17 +347,26 @@ class Router {
       throw new TypeError('argument format must be "array" or "object"');
     }
 
-    const nodes = [{ path: '', node: this.routeTree }];
-    let routes = [];
+    interface NodeItem {
+      path: string;
+      node: Node;
+    }
+
+    interface RouteItem {
+      path: string;
+      route: Route;
+    }
+
+    const nodes: NodeItem[] = [{ path: '', node: this.routeTree }];
+    let routes: RouteItem[] = [];
 
     while (nodes.length) {
-      const { path, node } = nodes.shift();
+      const { path, node } = nodes.shift() as NodeItem;
 
       Object.entries(node.nodes).forEach(([segment, childNode]) => {
         nodes.push({ path: `${path}/${segment}`, node: childNode });
       });
 
-      // eslint-disable-next-line no-loop-func
       Object.values(node.routes).forEach((route) => {
         routes.push({ path, route });
       });
@@ -357,10 +395,9 @@ class Router {
   }
 }
 
-const factoryMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const factoryMethods = ['ALL', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 factoryMethods.forEach((method) => {
-  // eslint-disable-next-line
   Router.prototype[method] = Router.prototype[method.toLowerCase()] = function factoryMethod(
     path,
     ...steps

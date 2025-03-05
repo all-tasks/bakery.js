@@ -117,7 +117,7 @@ describe('module "router" - class "Router"', async () => {
     expect(context.steps.after).toHaveBeenCalledWith(everyGet, getUsers);
     expect(context.steps.next).toHaveBeenCalledTimes(1);
   });
-  test('method "routing" * path', async () => {
+  test.only('method "routing" backtracking', async () => {
     const router = new Router({ prefix: '/api' });
     router.addRoute('GET:/path/*', () => {});
     router.addRoute('PUT:/path/*', () => {});
@@ -165,6 +165,34 @@ describe('module "router" - class "Router"', async () => {
     context.request.path = '/api/path/a/100';
     router.routing().apply(context);
     expect(context.route.path).toBe('GET:/api/path/a/*');
+  });
+  test.only('method "routing" ', async () => {
+    const router = new Router({ prefix: '/api' });
+    router.addRoute('GET:/path/*', () => {});
+    router.addRoute('GET:/path/a/b/c', () => {});
+
+    const context = {
+      request: {
+        method: 'GET',
+        path: '/api/path/a/b/c',
+        params: [],
+      },
+      response: {
+        status: 400,
+      },
+      steps: {
+        after: vi.fn(),
+        next: vi.fn(),
+      },
+    };
+    router.routing().apply(context);
+    expect(context.route).toBeDefined();
+    expect(context.route.path).toBe('GET:/api/path/a/b/c');
+
+    context.request.path = '/api/path/a/b/c/d';
+    router.routing().apply(context);
+    expect(context.route.path).toBe('GET:/api/path/*');
+    expect(context.request.params).toEqual({ '*': 'a/b/c/d' });
   });
   test('method "getAllRoutes"', async () => {
     const router = new Router({ prefix: '/api' });

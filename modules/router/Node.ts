@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-
 import validateArgument from './validateArgument.js';
 
 import Route from './Route.js';
@@ -7,15 +5,15 @@ import Route from './Route.js';
 import { type Step } from '#lib/types';
 
 class Node {
-  #segment;
+  #segment: string;
 
-  #params;
+  #params: Set<string>;
 
   #steps: Step[] = [];
 
-  #nodes = {};
+  #nodes: Record<string, Node> = {};
 
-  #routes = {};
+  #routes: Record<string, Route> = {};
 
   constructor(segment: string, ...steps: Step[]) {
     validateArgument.all({ segment, steps });
@@ -59,16 +57,15 @@ class Node {
   readonly nodes: Record<string, Node>;
   readonly routes: Record<string, Route>;
 
-  addParams(...params) {
+  addParams(...params: string[]): Node {
     if (params.length === 0) {
       console.warn('no params to add');
       return this;
     }
 
     params.forEach((param) => {
-      param = typeof param === 'string' && param.match(/^:?([\w-.]+)$/)?.[1];
-      if (param) {
-        this.#params.add(param);
+      if (typeof param === 'string' && param.match(/^:?([\w-.]+)$/)?.[1]) {
+        this.#params.add(param.slice(1));
       } else {
         throw new TypeError('param must be string and match /^:?([\\w-.]+)$/ pattern');
       }
@@ -77,7 +74,7 @@ class Node {
     return this;
   }
 
-  addSteps(...steps) {
+  addSteps(...steps: Step[]): Node {
     if (steps.length === 0) {
       console.warn('no steps to add');
       return this;
@@ -90,7 +87,11 @@ class Node {
     return this;
   }
 
-  addNode(segment, ...steps) {
+  addNode(segment: string, ...steps: Step[]): Node {
+    if (this.#segment === '*') {
+      throw new Error('wildcard node cannot have sub-nodes');
+    }
+
     // validate argument in new Node
 
     const newNode = new Node(segment, ...steps);
@@ -114,7 +115,7 @@ class Node {
     return this.#nodes[segment];
   }
 
-  mergeNode(scion) {
+  mergeNode(scion: Node): Node {
     if (!(scion instanceof Node)) {
       throw new TypeError('scion must be an instance of Node');
     }
@@ -148,7 +149,7 @@ class Node {
     return this;
   }
 
-  addRoute(method, path, ...steps) {
+  addRoute(method: string, path: string, ...steps: Step[]): Route {
     // validate argument in new Route
 
     method = method.toUpperCase();
@@ -162,7 +163,7 @@ class Node {
     return this.#routes[method];
   }
 
-  toString(replacer, space) {
+  toString(replacer?, space?: number): string {
     return JSON.stringify(this, replacer, space);
   }
 }
