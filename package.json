@@ -1,6 +1,6 @@
 {
   "name": "@all-tasks/bakery.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A RESTful API framework based on Bun.js",
   "private": false,
   "repository": {
