@@ -1,8 +1,8 @@
-import Route from './Route.ts';
+import Route from './Route';
 
-import Node from './Node.ts';
+import Node from './Node';
 
-import Router from './Router.ts';
+import Router from './Router';
 
 export default Router;
 
