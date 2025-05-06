@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -14,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
+          persist-credentials: true
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -29,7 +32,7 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           yarn version --patch --message "Upgrade to %s [skip ci]"
-          git push --follow-tags origin HEAD:develop
+          git push --follow-tags origin HEAD:main
 
       - name: Publish to npm
         run: yarn publish --non-interactive
