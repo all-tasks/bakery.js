@@ -1,5 +1,7 @@
-import Bakery from './Bakery.ts';
+import Bakery from './Bakery';
 
 export default Bakery;
 
 export { Bakery };
+
+export * from './types';

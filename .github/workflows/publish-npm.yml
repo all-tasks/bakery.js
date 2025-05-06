@@ -1,0 +1,37 @@
+name: Publish to NPM and Tag with Yarn
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Bump version and push tag
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          yarn version --patch --message "Upgrade to %s [skip ci]"
+          git push --follow-tags origin HEAD:develop
+
+      - name: Publish to npm
+        run: yarn publish --non-interactive
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ALL_TASKS_NPM_TOKEN }}
