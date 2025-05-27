@@ -6,12 +6,15 @@
     "esModuleInterop": true,
     "module": "ESNext",
     "moduleResolution": "node",
-    "target": "ESNext",
+    "target": "ES2022",
     "types": ["bun-types"],
     "useDefineForClassFields": true,
     "baseUrl": ".",
     "paths": {
-      "#lib/*": ["lib/*"]
+      "#lib": ["lib"],
+      "#lib/*": ["lib/*"],
+      "#modules": ["modules"],
+      "#modules/*": ["modules/*"]
     }
   },
   "references": []
