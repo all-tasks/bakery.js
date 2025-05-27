@@ -123,46 +123,49 @@ function createResponse({
     headers.set('Content-Type', type);
   }
 
+  let headerProxy;
+  let cookieProxy;
+
   return new Proxy(() => {}, {
     get(target: any, property) {
       property = aliases[property] || property;
 
       switch (property) {
         case 'status': {
-          return (target.status ||= status);
+          return (target.status ??= status);
         }
         case 'message': {
-          return (target.message ||= message);
+          return (target.message ??= message);
         }
         case 'header': {
-          return new Proxy(
+          return (headerProxy ??= new Proxy(
             {},
             {
               get(_, key) {
-                return (target.headers ||= headers).get(key);
+                return (target.headers ??= headers).get(key);
               },
               set(_, key, value) {
-                (target.headers ||= headers).set(key, value);
+                (target.headers ??= headers).set(key, value);
                 return true;
               },
             },
-          );
+          ));
         }
         case 'headers': {
-          return (target.headers ||= headers);
+          return (target.headers ??= headers);
         }
         case 'headersObject': {
-          return Object.fromEntries((target.headers ||= headers));
+          return Object.fromEntries((target.headers ??= headers));
         }
         case 'type': {
-          return (target.headers ||= headers).get('Content-Type');
+          return (target.headers ??= headers).get('Content-Type');
         }
         case 'cookie': {
-          return new Proxy(
+          return (cookieProxy ??= new Proxy(
             {},
             {
               get(_, key) {
-                const cookies = (target.headers ||= headers).getSetCookie();
+                const cookies = (target.headers ??= headers).getSetCookie();
 
                 switch (key) {
                   case 'get': {
@@ -170,12 +173,12 @@ function createResponse({
                   }
                   case 'set': {
                     return (k, v, o) => {
-                      (target.headers ||= headers).set('Set-Cookie', cookie.serialize(k, v, o));
+                      (target.headers ??= headers).set('Set-Cookie', cookie.serialize(k, v, o));
                     };
                   }
                   case 'append': {
                     return (k, v, o) => {
-                      (target.headers ||= headers).append('Set-Cookie', cookie.serialize(k, v, o));
+                      (target.headers ??= headers).append('Set-Cookie', cookie.serialize(k, v, o));
                     };
                   }
                   default: {
@@ -184,14 +187,14 @@ function createResponse({
                 }
               },
               set(_, key: string, value) {
-                (target.headers ||= headers).append('Set-Cookie', cookie.serialize(key, value));
+                (target.headers ??= headers).append('Set-Cookie', cookie.serialize(key, value));
                 return true;
               },
             },
-          );
+          ));
         }
         case 'cookies': {
-          return (target.headers ||= headers).getSetCookie();
+          return (target.headers ??= headers).getSetCookie();
         }
         case 'body': {
           return target.originalBody || target.body || body;
@@ -235,7 +238,7 @@ function createResponse({
         }
         case 'type': {
           validateArgument.type(value);
-          (target.headers ||= headers).set('Content-Type', value);
+          (target.headers ??= headers).set('Content-Type', value);
           break;
         }
         case 'body': {
@@ -245,8 +248,8 @@ function createResponse({
 
           type = checkBodyType(value);
 
-          target.status ||= 200;
-          target.message ||= statuses(200);
+          target.status ??= 200;
+          target.message ??= statuses(200);
 
           target.headers || (target.headers ??= headers).set('Content-Type', type);
 

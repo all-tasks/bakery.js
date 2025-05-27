@@ -42,7 +42,7 @@ const aliases = {
   cookies: 'cookie',
 };
 
-const urlProperties = [
+const urlProperties = new Set([
   'href',
   'origin',
   'protocol',
@@ -55,7 +55,7 @@ const urlProperties = [
   'hash',
   'search',
   'searchParams',
-];
+]);
 
 interface Query {
   [key: string]: string | string[];
@@ -92,8 +92,8 @@ function createRequest(req: Request): Req {
       get(target: any, property: string) {
         property = aliases[property] || property;
 
-        if (urlProperties.includes(property)) {
-          return (target.URL ||= new URL(req.url))[property];
+        if (urlProperties.has(property)) {
+          return (target.URL ??= new URL(req.url))[property];
         }
 
         switch (property) {
@@ -101,20 +101,20 @@ function createRequest(req: Request): Req {
             return req.method.toUpperCase();
           }
           case 'URL': {
-            return (target.URL ||= new URL(req.url));
+            return (target.URL ??= new URL(req.url));
           }
           case 'query': {
-            return (target.query ||= getQuery((target.URL ||= new URL(req.url)).searchParams));
+            return (target.query ??= getQuery((target.URL ??= new URL(req.url)).searchParams));
           }
           case 'type': {
-            return (target.type ||= req.headers.get('content-type'));
+            return (target.type ??= req.headers.get('content-type'));
           }
           case 'cookie': {
-            return (target.cookie ||= cookie.parse(req.headers.get('cookie') || '') || {});
+            return (target.cookie ??= cookie.parse(req.headers.get('cookie') || '') || {});
           }
           case 'body': {
             return async (
-              reader = checkBodyType((target.type ||= req.headers.get('content-type'))),
+              reader = checkBodyType((target.type ??= req.headers.get('content-type'))),
             ) => {
               try {
                 if (req.headers.get('content-length') === '0') {
@@ -123,8 +123,8 @@ function createRequest(req: Request): Req {
                 if (!['arrayBuffer', 'blob', 'formData', 'json', 'text'].includes(reader)) {
                   throw new Error('invalid body reader');
                 }
-                target.body ||= {};
-                return (target.body[reader] ||= await req[reader]());
+                target.body ??= {};
+                return (target.body[reader] ??= await req[reader]());
               } catch (error) {
                 console.error(error);
                 return undefined;

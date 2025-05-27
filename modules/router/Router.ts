@@ -131,7 +131,7 @@ class Router {
 
     validateArgument.all({ method, steps });
 
-    (this.#methodSteps[method] ||= []).push(...steps);
+    (this.#methodSteps[method] ??= []).push(...steps);
 
     return this;
   }
@@ -157,7 +157,7 @@ class Router {
 
     validateArgument.all({ status, steps });
 
-    (this.#statusSteps[status] ||= []).push(...steps);
+    (this.#statusSteps[status] ??= []).push(...steps);
 
     return this;
   }
