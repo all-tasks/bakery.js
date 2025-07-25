@@ -263,4 +263,21 @@ describe('module "router" - class "Router"', async () => {
     router.get('/users', () => {});
     router.post('/users', () => {});
   });
+  test('method "toString"', async () => {
+    const router = new Router({ prefix: '/api' });
+    // Test without parameters (should work with optional parameters)
+    expect(() => {
+      router.toString();
+    }).not.toThrow();
+    expect(typeof router.toString()).toBe('string');
+    // Test with parameters (should still work)
+    expect(() => {
+      router.toString(null, 2);
+    }).not.toThrow();
+    expect(typeof router.toString(null, 2)).toBe('string');
+    // Verify it's valid JSON
+    expect(() => {
+      JSON.parse(router.toString());
+    }).not.toThrow();
+  });
 });

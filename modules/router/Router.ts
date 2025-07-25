@@ -390,7 +390,7 @@ class Router {
       : Object.fromEntries(routes.map(({ route }) => [route.path, route]));
   }
 
-  toString(replacer, space) {
+  toString(replacer?: any, space?: any) {
     return JSON.stringify(this, replacer, space);
   }
 }
