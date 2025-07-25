@@ -114,6 +114,8 @@ class Router {
   readonly routeTree: Node;
   readonly methodSteps: Record<string, ReadonlyArray<Step>>;
   readonly statusSteps: Record<number, ReadonlyArray<Step>>;
+  // Alias method for adding routes
+  readonly addRoute: (routePath: string, ...steps: Step[]) => Route;
 
   addGlobalSteps(...steps: Step[]): Router {
     this.#routeTree.addSteps(...steps);
